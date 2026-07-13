@@ -1,0 +1,8 @@
+{
+  "name": "uprate-reviews",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node uprate-review-service.js"
+  }
+}
