@@ -1,0 +1,1844 @@
+<title>מנוע המסעדה היהודית</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700;800;900&family=Heebo:wght@300;400;500;700&family=Cousine:wght@400;700&display=swap">
+<style>
+/* ============================================================
+   מנוע המסעדה היהודית — deck
+   palette derived from the store's own design tokens
+   ============================================================ */
+:root{
+  --ink:#16100B; --ink2:#1E1710; --ink3:#271E16; --ink4:#31251B;
+  --line:#3B2C21; --line2:#4A382A;
+  --fg:#F7F0E6; --dim:#AC9A86; --faint:#7C6B59;
+  --accent:#F97316; --accent-ink:#1A0F06;
+  --amber:#EFA53C; --wine:#C4587E; --green:#54C48A; --red:#E7695F; --bronze:#D8B45A;
+  --glow:radial-gradient(120% 90% at 82% 8%, rgba(249,115,22,.16), transparent 60%);
+  --display:"Rubik","Heebo",system-ui,sans-serif;
+  --body:"Heebo","Rubik",system-ui,sans-serif;
+  --mono:"Cousine","Heebo",ui-monospace,monospace;
+  --r:14px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --ink:#FBF6EF; --ink2:#FFFFFF; --ink3:#FFFCF7; --ink4:#F4EADC;
+    --line:#E4D7C4; --line2:#D3C2AB;
+    --fg:#221810; --dim:#6F5C48; --faint:#9B8873;
+    --accent:#C85A0B; --accent-ink:#FFFFFF;
+    --amber:#A8720C; --wine:#9C3D5F; --green:#2C8055; --red:#BE3A30; --bronze:#8A6A18;
+    --glow:radial-gradient(120% 90% at 82% 8%, rgba(200,90,11,.10), transparent 60%);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --ink:#FBF6EF; --ink2:#FFFFFF; --ink3:#FFFCF7; --ink4:#F4EADC;
+  --line:#E4D7C4; --line2:#D3C2AB;
+  --fg:#221810; --dim:#6F5C48; --faint:#9B8873;
+  --accent:#C85A0B; --accent-ink:#FFFFFF;
+  --amber:#A8720C; --wine:#9C3D5F; --green:#2C8055; --red:#BE3A30; --bronze:#8A6A18;
+  --glow:radial-gradient(120% 90% at 82% 8%, rgba(200,90,11,.10), transparent 60%);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+body{
+  direction:rtl; background:var(--ink); color:var(--fg);
+  font-family:var(--body); margin:0; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0;background:var(--glow);pointer-events:none;z-index:0}
+
+/* ---------- deck chrome ---------- */
+.deck{
+  --fs:clamp(12.5px, calc(0.38vw + 0.86vh), 18px);
+  position:relative;z-index:1;
+  min-height:100vh;display:flex;flex-direction:column;
+  padding:clamp(10px,1.4vh,18px) clamp(16px,2vw,30px) clamp(6px,1vh,12px);
+  gap:clamp(8px,1.2vh,14px);
+}
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:calc(var(--fs)*.78)}
+.brandmark{display:flex;align-items:center;gap:8px;color:var(--dim);letter-spacing:.02em}
+.brandmark b{color:var(--fg);font-family:var(--display);font-weight:800;letter-spacing:0}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.topbar .spacer{margin-inline-start:auto}
+.btn{
+  font-family:var(--mono);font-size:calc(var(--fs)*.78);color:var(--dim);
+  background:transparent;border:1px solid var(--line);border-radius:999px;
+  padding:.34em .95em;cursor:pointer;transition:.16s;
+}
+.btn:hover{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.btn:focus-visible,.slide a:focus-visible,.idx-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.rail{height:3px;background:var(--line);border-radius:2px;overflow:hidden;flex:none}
+.rail i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--accent));border-radius:2px;transition:width .3s ease}
+
+/* ---------- stage ---------- */
+.stage{flex:1 1 auto;min-height:0;display:flex;position:relative}
+.slide{
+  display:none;flex:1;min-width:0;
+  background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);
+  padding:clamp(18px,3.2vh,42px) clamp(20px,3vw,54px);
+  overflow-y:auto;overscroll-behavior:contain;
+  font-size:var(--fs);line-height:1.55;
+  flex-direction:column;gap:calc(var(--fs)*1.15);
+}
+.slide.on{display:flex;animation:enter .34s cubic-bezier(.2,.7,.3,1)}
+.slide:not(.cover):not(.chapter){align-items:center;justify-content:safe center}
+.slide:not(.cover):not(.chapter) > *{width:100%;max-width:1180px}
+@keyframes enter{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.on{animation:none}.rail i{transition:none}}
+
+/* chapter accent inheritance */
+.slide[data-ch="2"]{--accent:var(--amber)}
+.slide[data-ch="3"]{--accent:var(--wine)}
+.slide[data-ch="4"]{--accent:var(--green)}
+.slide[data-ch="5"]{--accent:var(--bronze)}
+
+/* ---------- typography ---------- */
+.eyebrow{
+  font-family:var(--mono);font-size:calc(var(--fs)*.76);font-weight:700;
+  letter-spacing:.14em;color:var(--accent);display:flex;align-items:center;gap:.6em;
+}
+.eyebrow::before{content:"";width:calc(var(--fs)*1.6);height:2px;background:var(--accent);flex:none}
+.slide h2{
+  font-family:var(--display);font-weight:800;
+  font-size:calc(var(--fs)*2.45);line-height:1.07;margin:0;text-wrap:balance;
+  letter-spacing:-.01em;
+}
+.slide h3{font-family:var(--display);font-weight:700;font-size:calc(var(--fs)*1.02);margin:0;line-height:1.25}
+.lede{color:var(--dim);font-size:calc(var(--fs)*1.06);max-width:64ch;margin:0;font-weight:300}
+.slide p{margin:0}
+.head{display:flex;flex-direction:column;gap:calc(var(--fs)*.42);flex:none}
+.perf{height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 7px,transparent 7px 14px);flex:none}
+.body{display:flex;flex-direction:column;gap:calc(var(--fs)*1.05);flex:0 1 auto;min-height:0}
+strong{font-weight:700;color:var(--fg)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- cards ---------- */
+.cards{display:grid;gap:calc(var(--fs)*.72);grid-template-columns:repeat(3,minmax(0,1fr));align-content:start}
+.cards.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cards.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.cards,.cards.c4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.cards,.cards.c2,.cards.c4{grid-template-columns:1fr}}
+.card{
+  background:var(--ink3);border:1px solid var(--line);border-radius:11px;
+  padding:calc(var(--fs)*.85) calc(var(--fs)*.95);
+  display:flex;flex-direction:column;gap:calc(var(--fs)*.34);
+}
+.card p{color:var(--dim);font-size:calc(var(--fs)*.9);font-weight:300}
+.card .tick{font-family:var(--mono);font-size:calc(var(--fs)*.72);color:var(--accent);letter-spacing:.1em}
+.card.lit{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 8%,var(--ink3))}
+
+/* plain list — no card chrome */
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(9em,auto) 1fr;gap:calc(var(--fs)*.5) calc(var(--fs)*1.3);
+  padding:calc(var(--fs)*.52) 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row dt{font-weight:700;font-family:var(--display);font-size:calc(var(--fs)*.95)}
+.row dd{margin:0;color:var(--dim);font-weight:300;font-size:calc(var(--fs)*.93)}
+.row dd b{color:var(--fg);font-weight:500}
+
+/* ---------- stat tiles ---------- */
+.stats{display:grid;gap:calc(var(--fs)*.7);grid-template-columns:repeat(4,minmax(0,1fr))}
+.stats.s5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:900px){.stats,.stats.s5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{border:1px solid var(--line);border-radius:11px;padding:calc(var(--fs)*.9);background:var(--ink3);display:flex;flex-direction:column;gap:.15em}
+.stat b{font-family:var(--display);font-weight:900;font-size:calc(var(--fs)*2.3);line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat span{font-size:calc(var(--fs)*.85);color:var(--dim);font-weight:300}
+
+/* ---------- chips ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:calc(var(--fs)*.38)}
+.chip{
+  font-family:var(--mono);font-size:calc(var(--fs)*.76);
+  border:1px solid var(--line2);border-radius:999px;padding:.28em .8em;color:var(--dim);
+  background:var(--ink3);white-space:nowrap;
+}
+.chip.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.chip.g{border-color:var(--green);color:var(--green)}
+.chip.r{border-color:var(--red);color:var(--red)}
+
+/* ---------- flow ---------- */
+.flow{display:grid;gap:calc(var(--fs)*.5);grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr))}
+.step{
+  border:1px solid var(--line);border-radius:10px;padding:calc(var(--fs)*.72);
+  background:var(--ink3);display:flex;flex-direction:column;gap:.25em;position:relative;
+}
+.step em{font-family:var(--mono);font-style:normal;font-size:calc(var(--fs)*.72);color:var(--accent);letter-spacing:.1em}
+.step h3{font-size:calc(var(--fs)*.95)}
+.step p{color:var(--dim);font-size:calc(var(--fs)*.82);font-weight:300}
+
+/* ---------- split ---------- */
+.split{display:grid;gap:calc(var(--fs)*1.2);grid-template-columns:1.25fr .85fr;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.aside{
+  border:1px solid var(--line);border-inline-start:3px solid var(--accent);
+  border-radius:10px;background:var(--ink3);padding:calc(var(--fs)*.9);
+  display:flex;flex-direction:column;gap:calc(var(--fs)*.42);
+}
+.aside .t{font-family:var(--mono);font-size:calc(var(--fs)*.74);letter-spacing:.12em;color:var(--accent)}
+.aside p{color:var(--dim);font-size:calc(var(--fs)*.9);font-weight:300}
+
+/* ---------- bullets ---------- */
+ul.tickets{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:calc(var(--fs)*.42)}
+ul.tickets li{display:grid;grid-template-columns:auto 1fr;gap:.7em;align-items:start;font-size:calc(var(--fs)*.95);font-weight:300;color:var(--dim)}
+ul.tickets li::before{content:"◂";color:var(--accent);font-family:var(--mono);line-height:1.5}
+ul.tickets li b{color:var(--fg);font-weight:600}
+
+/* ---------- cover ---------- */
+.cover{justify-content:center;gap:calc(var(--fs)*1.5);
+  background:linear-gradient(150deg,var(--ink2) 0%,var(--ink3) 55%,color-mix(in srgb,var(--accent) 14%,var(--ink2)) 100%)}
+.cover h1{
+  font-family:var(--display);font-weight:900;margin:0;
+  font-size:calc(var(--fs)*5);line-height:.96;letter-spacing:-.025em;text-wrap:balance;
+}
+.cover .sub{font-size:calc(var(--fs)*1.3);color:var(--dim);font-weight:300;max-width:52ch}
+.cover .meta{display:flex;flex-wrap:wrap;gap:calc(var(--fs)*2.2);font-family:var(--mono);font-size:calc(var(--fs)*.78);color:var(--faint);
+  border-top:1px dashed var(--line2);padding-top:calc(var(--fs)*1.1);margin-top:calc(var(--fs)*.6)}
+.cover .meta b{display:block;color:var(--fg);font-family:var(--display);font-size:calc(var(--fs)*1.1);font-weight:700}
+
+/* ---------- chapter divider = tear-off bon ---------- */
+.chapter{align-items:center;justify-content:center;text-align:center;background:var(--ink)}
+.bon{
+  width:min(430px,92%);background:var(--ink2);color:var(--fg);
+  border:1px solid var(--line);padding:calc(var(--fs)*2) calc(var(--fs)*1.6);
+  display:flex;flex-direction:column;gap:calc(var(--fs)*.75);align-items:center;
+  position:relative;
+  -webkit-mask:radial-gradient(6px at 6px 50%,transparent 98%,#000) -6px 0/100% 100% no-repeat;
+}
+.bon::before,.bon::after{content:"";position:absolute;left:0;right:0;height:8px;
+  background:repeating-linear-gradient(90deg,var(--ink) 0 6px,transparent 6px 12px)}
+.bon::before{top:-1px}.bon::after{bottom:-1px}
+.bon .n{font-family:var(--display);font-weight:900;font-size:calc(var(--fs)*4.6);line-height:.9;color:var(--accent)}
+.bon .k{font-family:var(--mono);font-size:calc(var(--fs)*.78);letter-spacing:.24em;color:var(--faint)}
+.bon h2{font-size:calc(var(--fs)*1.9)}
+.bon .d{color:var(--dim);font-weight:300;font-size:calc(var(--fs)*.95);max-width:34ch}
+.bon .line{width:100%;height:1px;background:repeating-linear-gradient(90deg,var(--line2) 0 5px,transparent 5px 10px)}
+
+/* ---------- table ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:calc(var(--fs)*.88)}
+.tbl th{text-align:right;font-family:var(--mono);font-size:calc(var(--fs)*.74);letter-spacing:.1em;
+  color:var(--faint);font-weight:700;padding:.5em .7em;border-bottom:1px solid var(--line2)}
+.tbl td{padding:.5em .7em;border-bottom:1px dashed var(--line);color:var(--dim);font-weight:300;vertical-align:top}
+.tbl td:first-child{color:var(--fg);font-weight:500}
+.tblwrap{overflow-x:auto;max-width:100%}
+
+/* ---------- footer ---------- */
+.foot{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:calc(var(--fs)*.76);color:var(--faint);flex:none}
+.foot .spacer{margin-inline-start:auto}
+.foot .cnt{color:var(--dim);font-variant-numeric:tabular-nums}
+.foot .chname{color:var(--accent)}
+
+/* ---------- index overlay ---------- */
+.idx{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--ink) 94%,#000);
+  padding:clamp(18px,4vh,40px) clamp(16px,4vw,54px);overflow-y:auto}
+.idx[hidden]{display:none}
+.idx h2{font-family:var(--display);font-weight:800;font-size:1.5rem;margin:0 0 1.2rem}
+.idx-grid{display:grid;gap:1.4rem;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));align-items:start}
+.idx-col h3{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;margin:0 0 .55rem;font-weight:700}
+.idx-item{display:grid;grid-template-columns:2.6em 1fr;gap:.5em;width:100%;text-align:right;
+  background:none;border:0;border-bottom:1px dashed var(--line);padding:.42em 0;cursor:pointer;
+  color:var(--dim);font-family:var(--body);font-size:.86rem;font-weight:300}
+.idx-item:hover{color:var(--fg)}
+.idx-item .n{font-family:var(--mono);color:var(--faint);font-size:.76rem}
+.idx-item.cur{color:var(--fg);font-weight:600}
+.idx-close{position:sticky;top:0;float:left}
+
+/* ---------- print: one page per slide ---------- */
+@media print{
+  body{background:#fff;color:#111}
+  body::before,.topbar,.rail,.foot,.idx{display:none!important}
+  .deck{--fs:11px;padding:0;gap:0}
+  .stage{display:block}
+  .slide{display:flex!important;break-after:page;border:0;border-radius:0;
+    min-height:96vh;background:#fff;color:#111;animation:none}
+}
+@page{size:landscape;margin:12mm}
+</style>
+
+<div class="deck">
+  <div class="topbar">
+    <span class="brandmark"><span class="dot"></span><b>המסעדה היהודית</b><span>· מנוע ההזמנות והתפעול</span></span>
+    <span class="spacer"></span>
+    <button class="btn" id="btn-idx" type="button">תוכן העניינים</button>
+    <button class="btn" id="btn-theme" type="button">מצב תצוגה</button>
+    <button class="btn" id="btn-print" type="button">הדפסה</button>
+  </div>
+  <div class="rail"><i id="rail"></i></div>
+
+  <main class="stage" id="stage">
+
+<!-- 01 שער -->
+<section class="slide cover on" data-ch="0" data-t="שער">
+  <span class="eyebrow">חדר המנועים · ספטמבר 2026</span>
+  <h1>מנוע המסעדה<br>היהודית</h1>
+  <p class="sub">מה באמת עומד מאחורי האתר: 28 מסכי ניהול, 69 טבלאות, 28 פונקציות שרת ו־174 מתגי הגדרה שמריצים מסעדה שלמה.</p>
+  <div class="meta">
+    <span>מסכי ניהול<b class="num">28</b></span>
+    <span>טבלאות נתונים<b class="num">69</b></span>
+    <span>פונקציות שרת<b class="num">28</b></span>
+    <span>מתגי הגדרה<b class="num">174</b></span>
+  </div>
+</section>
+
+<!-- 02 תזה -->
+<section class="slide" data-ch="0" data-t="לא חנות — מערכת הפעלה">
+  <div class="head">
+    <span class="eyebrow">הנקודה בשורה אחת</span>
+    <h2>הצד שהלקוח רואה הוא הקצה.<br>המערכת נמצאת מאחוריו.</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:1.05em">
+      <p class="lede">חנות אינטרנטית רגילה נגמרת ברגע שההזמנה נשלחת. כאן היא רק מתחילה: מכאן ואילך המערכת <strong>מדפיסה, מלקטת, אורזת, משבצת לנהג, עוקבת אחרי המסירה ומזכה על חוסרים</strong>.</p>
+      <ul class="tickets">
+        <li><b>מטבח</b> — בון שנדפס לבד בזמן שמחושב אחורה מרגע האספקה.</li>
+        <li><b>מחסן</b> — מסך ליקוט לפי סדר המדפים, עם שעון לכל עובד.</li>
+        <li><b>אריזה</b> — ספירת קרטונים, שקיות ומדבקת חלות למחר.</li>
+        <li><b>כביש</b> — מסלולים, קוד כניסה לנהג, מעקב מסירה חי.</li>
+        <li><b>כסף</b> — טיימר תשלום, תזכורות, ביטול אוטומטי, זיכויים.</li>
+        <li><b>הנהלה</b> — דוחות בסגנון אנליטיקס, השוואת תקופות וייצוא.</li>
+      </ul>
+    </div>
+    <aside class="aside">
+      <span class="t">מה זה אומר בפועל</span>
+      <h3>אף שלב לא נשען על זיכרון</h3>
+      <p>כל מעבר במחזור החיים של ההזמנה נרשם: מי לקט, מתי, כמה זמן זה לקח, מה חסר, מי ארז, איזה נהג לקח, ובאיזו שעה זה נמסר.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 03 מספרים -->
+<section class="slide" data-ch="0" data-t="המערכת במספרים">
+  <div class="head">
+    <span class="eyebrow">סדר גודל</span>
+    <h2>הבקאנד במספרים</h2>
+    <p class="lede">כל מספר כאן נספר מתוך הקוד והסכימה, לא מהערכה.</p>
+  </div>
+  <div class="body">
+    <div class="stats">
+      <div class="stat"><b class="num">69</b><span>טבלאות במסד</span></div>
+      <div class="stat"><b class="num">28</b><span>מסכי ניהול</span></div>
+      <div class="stat"><b class="num">28</b><span>פונקציות שרת</span></div>
+      <div class="stat"><b class="num">20</b><span>פעולות מסד מאובטחות</span></div>
+      <div class="stat"><b class="num">174</b><span>מתגי הגדרה</span></div>
+      <div class="stat"><b class="num">47</b><span>שדות בהזמנה אחת</span></div>
+      <div class="stat"><b class="num">54</b><span>שדות בפופאפ אחד</span></div>
+      <div class="stat"><b class="num">9</b><span>סטטוסי הזמנה</span></div>
+    </div>
+    <div class="perf"></div>
+    <div class="cards">
+      <div class="card"><span class="tick">STACK</span><h3>React · Vite · TypeScript</h3><p>ממשק מודולרי עם טעינה עצלה לכל מסך, RTL מלא ועיצוב מבוסס טוקנים.</p></div>
+      <div class="card"><span class="tick">BACKEND</span><h3>Supabase · Postgres</h3><p>הרשאות ברמת השורה, פונקציות Deno בקצה, Realtime, אחסון קבצים ומשימות pg_cron.</p></div>
+      <div class="card"><span class="tick">INTEGRATIONS</span><h3>Tranzila · LionWheel · Gmail · Meta</h3><p>סליקה, משלוחים, דיוור ופיד קטלוג — כולם מחוברים דרך השרת, לא מהדפדפן.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 מפת חדר הבקרה -->
+<section class="slide" data-ch="0" data-t="מפת חדר הבקרה">
+  <div class="head">
+    <span class="eyebrow">מבנה</span>
+    <h2>28 מסכי הניהול, לפי קבוצות</h2>
+    <p class="lede">התפריט האמיתי של לוח הבקרה, מסודר לפי הפרקים של המסמך הזה.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card lit"><span class="tick">פרק 01 · כסף והזמנות</span><h3>7 מסכים</h3>
+        <p>סקירה כללית · הזמנות · בקשות שינוי · לקוחות · קופונים · גיפט קארד · דוחות</p></div>
+      <div class="card" style="--accent:var(--wine);border-color:color-mix(in srgb,var(--wine) 40%,var(--line))"><span class="tick">פרק 02 · מטבח ותפעול</span><h3>3 מסכים + 7 תת־מסכים</h3>
+        <p>תצוגת מטבח · ליקוט ואריזה (לוח, מלקט, אורז, זיכויים, דוחות, הגדרות, טאבלט) · מדבקות מוצרים</p></div>
+      <div class="card" style="--accent:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,var(--line))"><span class="tick">פרק 03 · משלוחים</span><h3>6 מסכים</h3>
+        <p>משלוחים · שעות אספקה · מסלולים · לוח בקרה · LionWheel · בקשות ערים</p></div>
+      <div class="card" style="--accent:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line))"><span class="tick">פרק 04 · קטלוג ותוכן</span><h3>10 מסכים</h3>
+        <p>מוצרים · קטגוריות · מנות עסקיות · קייטרינג · ערוצי מכירה · דף הבית · ניהול תוכן · שאלות ותשובות · מדיה · פופאפים · דיוור</p></div>
+      <div class="card" style="--accent:var(--bronze);border-color:color-mix(in srgb,var(--bronze) 40%,var(--line))"><span class="tick">פרק 05 · תשתית</span><h3>2 מסכים + השרת</h3>
+        <p>משתמשי ניהול · הגדרות · ומתחתיהם: מסד הנתונים, פונקציות השרת והמשימות המתוזמנות</p></div>
+    </div>
+    <div class="perf"></div>
+    <p style="color:var(--faint);font-family:var(--mono);font-size:calc(var(--fs)*.8)">ניווט: ← הבא · → הקודם · G תוכן עניינים · P הדפסה</p>
+  </div>
+</section>
+
+<!-- 05 מחיצה 1 -->
+<section class="slide chapter" data-ch="1" data-t="פרק 1 · הזמנות וכסף">
+  <div class="bon">
+    <span class="k">CHAPTER</span><span class="n num">01</span>
+    <div class="line"></div>
+    <h2>הזמנות וכסף</h2>
+    <p class="d">דשבורד, מסך ההזמנות, מרכז ההדפסות, בקשות שינוי, תשלומים, קופונים, גיפט קארד ודוחות.</p>
+    <div class="line"></div>
+    <span class="k">7 SCREENS</span>
+  </div>
+</section>
+
+<!-- 06 דשבורד -->
+<section class="slide" data-ch="1" data-t="סקירה כללית">
+  <div class="head">
+    <span class="eyebrow">‎/admin</span>
+    <h2>המסך הראשון: מה קורה בחנות עכשיו</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.85em">
+      <div class="cards c4">
+        <div class="card"><h3>סה״כ הזמנות</h3><p>לכל הזמן</p></div>
+        <div class="card"><h3>סך ההכנסות</h3><p>בלי מבוטלות והחזרות</p></div>
+        <div class="card"><h3>הזמנות פתוחות</h3><p>חדש + בהכנה</p></div>
+        <div class="card"><h3>חסרים במלאי</h3><p>מספר מוצרים</p></div>
+      </div>
+      <dl class="rows">
+        <div class="row"><dt>הזמנות לפי מסלול</dt><dd>פילוח חי לכל ערוץ מכירה: כמה הזמנות וכמה כסף. נספרות רק הזמנות ששולמו — כולל כאלה שאושרו ידנית ע״י מנהל.</dd></div>
+        <div class="row"><dt>עגלות נטושות</dt><dd>הזמנות שהגיעו לשלב התשלום ולא שולמו, עם <b>שווי פוטנציאלי בשקלים</b>. לחיצה פותחת את הרשימה עם שם, טלפון ותאריך — כדי להתקשר.</dd></div>
+        <div class="row"><dt>גרף 12 חודשים</dt><dd>הזמנות והכנסות זה לצד זה, בשני צירים.</dd></div>
+        <div class="row"><dt>מוצרים חסרים / מוסתרים</dt><dd>שתי רשימות נפתחות — כדי שמוצר לא יישאר מוסתר בטעות אחרי החג.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">פרט קטן</span>
+      <h3>ההזמנות האחרונות</h3>
+      <p>חמש ההזמנות ששולמו אחרונות, בלחיצה נפתחת הקבלה המלאה — אותה קבלה שאפשר להדפיס.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 07 הזמנות סקירה -->
+<section class="slide" data-ch="1" data-t="מסך ההזמנות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/orders</span>
+    <h2>מסך ההזמנות — מרכז העצבים</h2>
+    <p class="lede">המסך הגדול במערכת. חיפוש, סינון, פעולות מרוכזות, שמונה סוגי הדפסה, ארכיון ושליחה לחברת המשלוחים.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">SEARCH</span><h3>חיפוש חופשי</h3><p>שם, מספר הזמנה, טלפון או כתובת — בשדה אחד.</p></div>
+      <div class="card"><span class="tick">FILTER</span><h3>סטטוס וערוץ</h3><p>סינון לפי אחד מתשעה סטטוסים ולפי ערוץ מכירה, עם ספירה לכל אחד.</p></div>
+      <div class="card"><span class="tick">ROUTE</span><h3>סינון לפי מסלול</h3><p>להציג רק את ההזמנות שמשובצות למסלול נהג מסוים.</p></div>
+      <div class="card"><span class="tick">LIVE</span><h3>עדכון חי</h3><p>מנוי זמן אמת + חותמת ״עודכן לאחרונה״, ומונה אדום בתפריט הצד להזמנות חדשות.</p></div>
+      <div class="card"><span class="tick">NOTES</span><h3>הצגת הערות</h3><p>מתג שמרחיב את הטבלה עם הערות הלקוח — נשמר למכשיר.</p></div>
+      <div class="card"><span class="tick">RANGE</span><h3>טווחים</h3><p>סינון לפי טווח תאריכים ולפי טווח מספרי הזמנה — לצורך הדפסות מרוכזות.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="chips">
+      <span class="chip on">חדש</span><span class="chip">בטיפול</span><span class="chip">מוכן</span><span class="chip">נשלח</span>
+      <span class="chip g">נמסר</span><span class="chip r">בוטל</span><span class="chip r">הוחזר</span>
+      <span class="chip">ממתין לתשלום</span><span class="chip r">בוטלה — לא שולם</span>
+    </div>
+  </div>
+</section>
+
+<!-- 08 פעולות מרוכזות -->
+<section class="slide" data-ch="1" data-t="פעולות מרוכזות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/orders · bulk</span>
+    <h2>לסמן חמישים הזמנות ולעשות להן משהו</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <dl class="rows">
+      <div class="row"><dt>בחירה</dt><dd>תיבת סימון לכל שורה, ו״בחר הכל״ שמסמן את כל מה שעבר את הסינון הנוכחי.</dd></div>
+      <div class="row"><dt>שינוי סטטוס מרוכז</dt><dd>בחירת סטטוס יעד → ״החל על המסומנות״. כל ההזמנות עוברות יחד.</dd></div>
+      <div class="row"><dt>הדפסה מרוכזת</dt><dd>כל סוגי ההדפסה פועלים גם על אוסף הזמנות מסומן, לא רק על אחת.</dd></div>
+      <div class="row"><dt>סדר הדפסה</dt><dd>לפי מספר הזמנה — או <b>לפי סדר המסלולים</b>, כך שהערימה שיוצאת מהמדפסת כבר מסודרת לפי סדר הנסיעה של הנהג.</dd></div>
+      <div class="row"><dt>מספר עותקים</dt><dd>שדה עותקים לכל הדפסה.</dd></div>
+      <div class="row"><dt>שליחה ל־LionWheel</dt><dd>שליחה או שליחה מחדש להזמנה, עם תג ״נשלח״ וקישור מעקב לחיץ.</dd></div>
+    </dl>
+    <aside class="aside">
+      <span class="t">למה זה משנה</span>
+      <h3>בערב חג זה ההבדל</h3>
+      <p>כשיש מאות הזמנות ליום אחד, ההבדל בין מסך שמדפיס אחת־אחת לבין מסך שמדפיס את כולן בסדר הנסיעה הוא שעות עבודה.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 09 מרכז ההדפסות -->
+<section class="slide" data-ch="1" data-t="מרכז ההדפסות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/orders · print</span>
+    <h2>שמונה סוגי הדפסה, כל אחד לתפקיד אחר</h2>
+  </div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>הדפסה</th><th>מה זה</th><th>למי זה</th></tr></thead>
+        <tbody>
+          <tr><td>דף הזמנה A4</td><td>ההזמנה המלאה, נפתח מיד בחלון ההדפסה</td><td>אריזה ותיוק</td></tr>
+          <tr><td>דף מלקט</td><td>A4 ממוין לפי מק״ט, מקובץ לפי אזורי אחסון</td><td>המלקט במחסן</td></tr>
+          <tr><td>PDF הזמנה</td><td>בדיוק הקובץ שנשלח ללקוח במייל (איטי יותר)</td><td>שירות לקוחות</td></tr>
+          <tr><td>מדבקות מוצרים</td><td>מדבקה לכל פריט לפי הגדרת היחידות של המוצר</td><td>סימון מגשים</td></tr>
+          <tr><td>מדבקות קרטונים</td><td>A4 עם 3 מדבקות: שם, כתובת, טלפון, אזור ומספר קרטון</td><td>הקרטונים היוצאים</td></tr>
+          <tr><td>מדבקות ריקות</td><td>דפים עם קווים למילוי ידני, בוחרים כמות עמודים</td><td>הזמנות של יותר מקרטון אחד</td></tr>
+          <tr><td>ליקוט חלות</td><td>רק הזמנות עם מוצרים מקטגוריית חלות — ומציג רק אותם</td><td>עמדת המאפייה</td></tr>
+          <tr><td>מרכזת מוצרים</td><td>ריכוז כמויות לפי מוצר עבור כל ההזמנות המסומנות</td><td>המטבח והרכש</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">בנוסף: <strong>דוח הזמנות לבקרה</strong> — טבלת A4 של ההזמנות שנבחרו עם עמודת סימון ✓, להצלבה ידנית מול הערימה.</p>
+  </div>
+</section>
+
+<!-- 10 ארכיון ועריכה -->
+<section class="slide" data-ch="1" data-t="ארכיון, עריכה וקבלה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/orders · פעולות על הזמנה</span>
+    <h2>מחיקה שאפשר לחזור ממנה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">ARCHIVE</span><h3>מחיקה רכה</h3><p>הזמנה שנמחקת לא נעלמת — היא מסומנת בתאריך מחיקה ויוצאת מכל המסכים והדוחות.</p></div>
+      <div class="card"><span class="tick">RESTORE</span><h3>מסך ״הזמנות שנמחקו״</h3><p>רשימת הארכיון עם תאריך המחיקה, וכפתור שחזור שמחזיר את ההזמנה למקומה.</p></div>
+      <div class="card"><span class="tick">EDIT</span><h3>עריכת הזמנה</h3><p>דיאלוג עריכה מלא — פריטים, כמויות, פרטי לקוח וכתובת.</p></div>
+      <div class="card"><span class="tick">RECEIPT</span><h3>קבלה</h3><p>תצוגת קבלה עם לוגו, הערת תחתית והדפסת בון כפול למטבח לפי ההגדרות.</p></div>
+      <div class="card"><span class="tick">EXPORT</span><h3>ייצוא</h3><p>דיאלוג ייצוא הזמנות לקובץ.</p></div>
+      <div class="card lit"><span class="tick">GATE</span><h3>סיסמת מנהל</h3><p>החזרת הזמנה לסטטוס ״חדש״ דורשת אימות — עם חלון זיכרון של 10 דקות.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">כל שינוי סטטוס נרשם, וכל שינוי בתזמון של הזמנה עתידית נכתב ליומן ייעודי — מי דחף למטבח, מתי הדפיסו, ומתי החזירו אותה לתור.</p>
+  </div>
+</section>
+
+<!-- 11 בקשות שינוי -->
+<section class="slide" data-ch="1" data-t="בקשות שינוי הזמנה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/order-amendments</span>
+    <h2>לקוח רוצה לשנות הזמנה שכבר שולמה</h2>
+    <p class="lede">זרימה שלמה שמונעת את שיחת הטלפון: הלקוח מבקש, המערכת מחשבת הפרש, המנהל מאשר, הלקוח משלים תשלום.</p>
+  </div>
+  <div class="body">
+    <div class="flow">
+      <div class="step"><em>01</em><h3>בקשה</h3><p>הלקוח עורך את ההזמנה שלו בקישור אישי</p></div>
+      <div class="step"><em>02</em><h3>השוואה</h3><p>המערכת מציגה מקורי מול מבוקש, שורה מול שורה</p></div>
+      <div class="step"><em>03</em><h3>הפרש</h3><p>נוסף / הוסר / שונה — עם דלתא כספית לכל שורה</p></div>
+      <div class="step"><em>04</em><h3>החלטה</h3><p>אישור או דחייה, עם הערת מנהל</p></div>
+      <div class="step"><em>05</em><h3>תשלום</h3><p>אם יש הפרש — נוצר לינק תשלום ונשלח ללקוח</p></div>
+      <div class="step"><em>06</em><h3>עדכון</h3><p>ההזמנה מתעדכנת על אותו מספר הזמנה</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>נעילה חכמה</dt><dd>אם יש הפרש לתשלום, כפתור ״עדכון ההזמנה״ <b>נעול</b> עד שהלקוח שילם בפועל. אין מצב שהמטבח מקבל הזמנה גדולה יותר בלי שנגבה הכסף.</dd></div>
+        <div class="row"><dt>שלוש רשימות</dt><dd>פתוחות · שולמו וממתינות לאישור · הכל. שורה ששולמה נצבעת בירוק כדי לקפוץ לעין.</dd></div>
+        <div class="row"><dt>זמן אמת</dt><dd>המסך מתעדכן לבד, ומונה הבקשות הממתינות מופיע בתפריט הצד.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">אותו מספר הזמנה</span>
+        <p>העדכון לא יוצר הזמנה חדשה. הוא כותב על אותה הזמנה ומוסיף הערה שמסמנת שהיא עודכנה — כך שהמטבח, המלקט והנהג ממשיכים לעבוד עם אותו מספר.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 12 מחזור תשלום -->
+<section class="slide" data-ch="1" data-t="מחזור חיי התשלום">
+  <div class="head">
+    <span class="eyebrow">‎backend · תשלומים</span>
+    <h2>הזמנה שלא שולמה לא נשארת תלויה באוויר</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <div class="chips">
+        <span class="chip">ממתין לתשלום</span><span class="chip on">חלון זמן</span><span class="chip on">תזכורת</span>
+        <span class="chip on">תזכורת</span><span class="chip r">בוטלה — לא שולם</span>
+      </div>
+      <dl class="rows">
+        <div class="row"><dt>דדליין</dt><dd>לכל הזמנה שנפתחה לתשלום נקבע מועד אחרון, לפי מספר דקות שאתם מגדירים.</dd></div>
+        <div class="row"><dt>תזכורות</dt><dd>מייל תזכורת עם לינק להשלמת התשלום, במרווחים שנקבעו ועד מספר תזכורות מקסימלי. המערכת סופרת כמה נשלחו ומתי.</dd></div>
+        <div class="row"><dt>ביטול אוטומטי</dt><dd>הזמנה שעברה את הדדליין מסומנת ״בוטלה — לא שולם״ ומשתחררת מהקיבולת.</dd></div>
+        <div class="row"><dt>תשלומים</dt><dd>אשראי בתשלומים דרך הסולק, עם מספר תשלומים מקסימלי וסכום מינימלי להצעה.</dd></div>
+        <div class="row"><dt>אמצעי תשלום</dt><dd>אשראי, ביט ומזומן — נבחרים בהגדרות ומוצגים ללקוח בהתאם.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">מי מריץ את זה</span>
+      <h3>עובד רקע קבוע</h3>
+      <p>פונקציית שרת שרצה כל כמה דקות דרך מתזמן במסד: מבטלת מה שפג, שולחת את התזכורות ומעדכנת את המונים. לא תלויה בכך שמישהו יפתח את הדשבורד.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 13 גיפט קארד -->
+<section class="slide" data-ch="1" data-t="ניהול גיפט קארד">
+  <div class="head">
+    <span class="eyebrow">‎/admin/gift-cards</span>
+    <h2>גיפט קארד עם יתרה, תנועות והנפקה ידנית</h2>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">BALANCE</span><h3>יתרה מתגלגלת</h3><p>סכום מקורי ויתרה נוכחית. מימוש חלקי משאיר את השאר לפעם הבאה.</p></div>
+      <div class="card"><span class="tick">LEDGER</span><h3>יומן תנועות</h3><p>טבלת תנועות נפרדת: כל טעינה, מימוש וביטול מתועדים.</p></div>
+      <div class="card"><span class="tick">ISSUE</span><h3>הנפקה ידנית</h3><p>מנהל מנפיק כרטיס ללא תשלום — לפיצוי לקוח או למתנה.</p></div>
+      <div class="card"><span class="tick">CANCEL</span><h3>ביטול כרטיס</h3><p>פונקציית שרת ייעודית לביטול, מוגנת בהרשאת מנהל.</p></div>
+      <div class="card"><span class="tick">DESIGNS</span><h3>גלריית עיצובים</h3><p>טבלת עיצובי כרטיס שהלקוח בוחר מתוכה.</p></div>
+      <div class="card"><span class="tick">SCHEDULE</span><h3>שליחה מתוזמנת</h3><p>משימה מתוזמנת שולחת את הכרטיס בתאריך שנבחר, לא ביום הרכישה.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">חמש פונקציות שרת נפרדות מטפלות בגיפט קארד: יצירה, אישור תשלום, תצוגת מימוש, הנפקה ניהולית וביטול ניהולי — כך שהיתרה לעולם לא מחושבת בדפדפן.</p>
+  </div>
+</section>
+
+<!-- 14 קופונים ולקוחות -->
+<section class="slide" data-ch="1" data-t="קופונים ולקוחות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/coupons · ‎/admin/customers</span>
+    <h2>קופונים ולקוחות</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <h3 style="font-size:calc(var(--fs)*1.2)">קופונים</h3>
+      <div class="chips"><span class="chip on">אחוז</span><span class="chip on">סכום</span><span class="chip on">משלוח חינם</span><span class="chip on">BOGO</span></div>
+      <dl class="rows">
+        <div class="row"><dt>BOGO</dt><dd>מוצר יעד, אחוז הנחה עליו וסכום מינימום להפעלה — שלושה שדות נפרדים.</dd></div>
+        <div class="row"><dt>מגבלות</dt><dd>תאריך תפוגה, מינימום הזמנה, מגבלת שימושים ומונה שימושים אוטומטי.</dd></div>
+        <div class="row"><dt>שיוך לערוץ</dt><dd>קוד שעובד רק בשוק הסופ״ש או רק בערוץ אירוע.</dd></div>
+      </dl>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <h3 style="font-size:calc(var(--fs)*1.2)">לקוחות</h3>
+      <p class="lede">מסך לקוחות שמרכז את מי שהזמין, עם היסטוריית ההזמנות שלו. סכום ההנחה נשמר כשדה נפרד על כל הזמנה — כך שבדוחות רואים בדיוק כמה כסף חולק בהנחות, ומי הלקוחות שמביאים הכי הרבה.</p>
+      <aside class="aside">
+        <span class="t">מועדפים ומעקב</span>
+        <p>לקוח רשום מקבל חשבון, רשימת מועדפים ומעקב הזמנות — והנתונים האלה זמינים לצוות מצד הניהול.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 15 דוחות א -->
+<section class="slide" data-ch="1" data-t="דוחות — טווחים והשוואה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/reports</span>
+    <h2>דוחות בסגנון מערכת אנליטיקס, לא טבלת אקסל</h2>
+  </div>
+  <div class="body">
+    <div class="chips">
+      <span class="chip">היום</span><span class="chip">אתמול</span><span class="chip on">השבוע עד היום</span><span class="chip">השבוע שעבר</span>
+      <span class="chip">החודש עד היום</span><span class="chip">החודש שעבר</span><span class="chip">הרבעון עד היום</span>
+      <span class="chip">השנה עד היום</span><span class="chip">7 ימים</span><span class="chip">30 ימים</span><span class="chip">השנה שעברה</span><span class="chip on">מותאם</span>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>אחד־עשר טווחים מוכנים</dt><dd>ועוד טווח מותאם עם תאריך התחלה וסיום.</dd></div>
+        <div class="row"><dt>שתי שיטות השוואה</dt><dd>מול <b>התקופה הקודמת</b> באותו אורך, או מול <b>אותה תקופה אשתקד</b>. כל מדד מקבל תג שינוי באחוזים, ירוק או אדום.</dd></div>
+        <div class="row"><dt>סינון לפי ערוץ</dt><dd>כל הדוח, כולל הגרפים והמשפך, מצטמצם לערוץ מכירה אחד.</dd></div>
+        <div class="row"><dt>נשמר לפעם הבאה</dt><dd>הבחירה נשמרת בדפדפן — פותחים את המסך וממשיכים מאיפה שעצרתם.</dd></div>
+        <div class="row"><dt>ללא תקרה</dt><dd>השליפה עוברת דף אחר דף מעל מגבלת 1,000 השורות — גם חודש עמוס נטען במלואו.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">שבוע מתחיל ביום ראשון</span>
+        <p>כל חישובי השבוע, החודש והרבעון נעשים לפי לוח השנה הישראלי ולפי שעון ירושלים.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 16 דוחות ב -->
+<section class="slide" data-ch="1" data-t="דוחות — מדדים ומשפך">
+  <div class="head">
+    <span class="eyebrow">‎/admin/reports · KPI</span>
+    <h2>שמונה מדדים, וכל אחד מול תקופת ההשוואה</h2>
+  </div>
+  <div class="body">
+    <div class="stats">
+      <div class="stat"><b>₪</b><span>סה״כ מכירות</span></div>
+      <div class="stat"><b>₪</b><span>מכירות נטו</span></div>
+      <div class="stat"><b>#</b><span>הזמנות</span></div>
+      <div class="stat"><b>Ø</b><span>ערך הזמנה ממוצע</span></div>
+      <div class="stat"><b>₪</b><span>הכנסות משלוח</span></div>
+      <div class="stat"><b>#</b><span>מוצרים שנמכרו</span></div>
+      <div class="stat"><b>%</b><span>הזמנות בהנחה</span></div>
+      <div class="stat"><b>#</b><span>סוגים שנמכרו</span></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <div style="display:flex;flex-direction:column;gap:.8em">
+        <h3 style="font-size:calc(var(--fs)*1.2)">משפך המרה</h3>
+        <div class="flow" style="grid-template-columns:repeat(3,1fr)">
+          <div class="step"><em>STEP 1</em><h3>הוספות לסל</h3><p>נמדד באתר</p></div>
+          <div class="step"><em>STEP 2</em><h3>כניסות לקופה</h3><p>+ אחוז המרה מהסל</p></div>
+          <div class="step"><em>STEP 3</em><h3>רכישות</h3><p>+ אחוז המרה מהקופה</p></div>
+        </div>
+        <p class="lede">המשפך נבנה מטבלת אירועים שהאתר כותב אליה בזמן אמת, ומכבד את טווח התאריכים והערוץ שנבחרו.</p>
+      </div>
+      <aside class="aside">
+        <span class="t">תרשימים</span>
+        <p>מכירות נטו והזמנות, כשקו מקווקו של תקופת ההשוואה מונח מעל הנוכחית. רזולוציה אוטומטית או ידנית — יום, שבוע או חודש. קו או עמודות.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 17 דוחות ג -->
+<section class="slide" data-ch="1" data-t="דוחות — טבלאות מובילים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/reports · tables</span>
+    <h2>מי, מה, איפה ובאיזה קופון</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><span class="tick">CUSTOMERS</span><h3>לקוחות מובילים</h3><p>שם, מספר הזמנות והוצאה כוללת. מזוהים לפי טלפון, מייל או שם.</p></div>
+      <div class="card"><span class="tick">COUPONS</span><h3>קופונים מובילים</h3><p>קוד, כמה הזמנות מומשו וכמה כסף ירד בהנחה.</p></div>
+      <div class="card"><span class="tick">CATEGORIES</span><h3>קטגוריות מובילות</h3><p>פריטים שנמכרו ומכירות נטו, כשההכנסה מתחלקת בין קטגוריות של אותו מוצר.</p></div>
+      <div class="card"><span class="tick">PRODUCTS</span><h3>מוצרים מובילים</h3><p>עשרים המוצרים הנמכרים ביותר, עם אפשרות לפתוח את הרשימה המלאה.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>פילוח לפי אזור</dt><dd>הזמנות והכנסות לכל אזור משלוח, ממוין לפי הכנסה.</dd></div>
+        <div class="row"><dt>פילוח לפי סטטוס ואמצעי תשלום</dt><dd>כמה הזמנות בכל אחד, כתגיות.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">ייצוא</span>
+        <h3>CSV אחד עם הכול</h3>
+        <p>שורות ההזמנות, ואחריהן לקוחות מובילים, קופונים, קטגוריות ומוצרים — בקובץ אחד שנפתח נכון בעברית באקסל.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 18 מחיצה 2 -->
+<section class="slide chapter" data-ch="2" data-t="פרק 2 · מטבח ותפעול">
+  <div class="bon">
+    <span class="k">CHAPTER</span><span class="n num">02</span>
+    <div class="line"></div>
+    <h2>מטבח, ליקוט ואריזה</h2>
+    <p class="d">תצוגת המטבח, מנוע ההזמנות העתידיות, לוח הליקוט, מסכי המלקט והאורז, זיכויים ומדבקות.</p>
+    <div class="line"></div>
+    <span class="k">REALTIME · 80mm BON · DARK MODE</span>
+  </div>
+</section>
+
+<!-- 19 תצוגת מטבח -->
+<section class="slide" data-ch="2" data-t="תצוגת מטבח">
+  <div class="head">
+    <span class="eyebrow">‎/admin/kitchen</span>
+    <h2>מסך שתולים במטבח ולא נוגעים בו</h2>
+    <p class="lede">שלוש עמודות חיות: חדשות, בהכנה, בדרך. ההזמנה מופיעה לבד, מצלצלת לבד ומודפסת לבד.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card lit"><span class="tick">AUTO</span><h3>הדפסה אוטומטית</h3><p>בון נדפס ברגע שהזמנה נחשפת. מתג לכל מכשיר בנפרד — המסך במטבח מדפיס, המסך במשרד לא.</p></div>
+      <div class="card"><span class="tick">SOUND</span><h3>צליל והתראה</h3><p>צלצול והודעה קופצת על כל הזמנה חדשה, עם מתג כיבוי.</p></div>
+      <div class="card"><span class="tick">BUSY</span><h3>״לחץ במטבח״</h3><p>מתג שמדליק ישירות מהמטבח באנר עומס באתר של הלקוחות.</p></div>
+      <div class="card"><span class="tick">TIMER</span><h3>שעון מתמשך</h3><p>כמה דקות עברו מאז שההזמנה התקבלה. מעל עשר דקות בסטטוס ״חדש״ — הכרטיס מתחיל לפעום.</p></div>
+      <div class="card"><span class="tick">ETA</span><h3>יעד מסירה</h3><p>תג ״להיות אצל הלקוח בשעה…״ שמחושב מזמן הנסיעה של האזור, ונצבע באדום כשנשארו פחות מ־30 דקות.</p></div>
+      <div class="card"><span class="tick">COPY</span><h3>העתקה בלחיצה</h3><p>שם, טלפון, כתובת מלאה ועיר — כל אחד עם כפתור העתקה, לשיחה או לוויז.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <p class="lede">הכרטיס מציג את הפריטים בכמות ענקית, את הוריאציה בצבע נפרד ואת התוספות כשורות משנה — כי מבשלים ממנו, לא קוראים אותו.</p>
+      <aside class="aside">
+        <span class="t">כלל ברזל</span>
+        <p>הזמנות של ערוצי אירוע <b>לעולם לא</b> מגיעות למסך המטבח ולא מדפיסות בון. הן מטופלות רק במייל ובקובץ — הפרדה מוחלטת בקוד, בשני מקומות שונים.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 20 חוקי חשיפה -->
+<section class="slide" data-ch="2" data-t="מתי הזמנה נכנסת למטבח">
+  <div class="head">
+    <span class="eyebrow">‎backend · לוגיקת חשיפה</span>
+    <h2>ארבעה תנאים לפני שהמטבח רואה הזמנה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="flow" style="grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))">
+      <div class="step"><em>תנאי 01</em><h3>ערוץ יומי</h3><p>ערוצי אירוע מסוננים החוצה לחלוטין</p></div>
+      <div class="step"><em>תנאי 02</em><h3>סטטוס פעיל</h3><p>חדש, בהכנה או נשלח בלבד</p></div>
+      <div class="step"><em>תנאי 03</em><h3>התשלום עבר</h3><p>אשראי או ביט חייבים להיות משולמים בפועל</p></div>
+      <div class="step"><em>תנאי 04</em><h3>הגיע הזמן</h3><p>הזמנה עתידית נעולה עד לשעת הכניסה למטבח</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>איפוס יומי</dt><dd>הלשונית ״בדרך״ מתנקה בחצות. הזמנות שיצאו אתמול לא מזהמות את המסך של היום, וזה נבדק כל חמש דקות.</dd></div>
+        <div class="row"><dt>וואטסאפ ללקוח</dt><dd>כפתור שפותח הודעה מוכנה עם הסטטוס הנוכחי וקישור מעקב אישי.</dd></div>
+        <div class="row"><dt>החזרה לתור</dt><dd>הזמנה עתידית שנדחפה למטבח מוקדם מדי ניתן להחזיר לרשימת הממתינות — והפעולה נרשמת ביומן.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">למה זה חשוב</span>
+        <p>בלי התנאים האלה, המטבח היה מתחיל לבשל הזמנה שהתשלום שלה נכשל, או הזמנה שאמורה לצאת בעוד יומיים.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 21 הזמנות עתידיות -->
+<section class="slide" data-ch="2" data-t="מנוע ההזמנות העתידיות">
+  <div class="head">
+    <span class="eyebrow">‎backend · תזמון</span>
+    <h2>המערכת מחשבת אחורה מרגע האספקה</h2>
+    <p class="lede">הזמנה לשעה 19:00 לא נכנסת למטבח ב־19:00. היא נכנסת בדיוק בזמן שצריך כדי להספיק.</p>
+  </div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>שדה על ההזמנה</th><th>מה הוא אומר</th><th>מי כותב אותו</th></tr></thead>
+        <tbody>
+          <tr><td>scheduled_for</td><td>מתי ההזמנה אמורה להימסר</td><td>הלקוח בקופה</td></tr>
+          <tr><td>kitchen_start_at</td><td>מתי המטבח מתחיל להכין</td><td>טריגר במסד, מזמן הכנה + מרווח ביטחון + זמן נסיעה</td></tr>
+          <tr><td>print_at</td><td>מתי הבון יוצא מהמדפסת</td><td>אותו טריגר, לפי ״דקות לפני״ בהגדרות</td></tr>
+          <tr><td>printed_at</td><td>הבון כבר יצא</td><td>עובד רקע שרץ כל דקה</td></tr>
+          <tr><td>kitchen_notified_at</td><td>ההזמנה נחשפה למטבח</td><td>אותו עובד רקע</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="split">
+      <p class="lede">בתחתית מסך המטבח יושבת <strong>טבלת ההזמנות העתידיות הממתינות</strong>: לקוח, מספר, אזור, שעת אספקה, שעת כניסה למטבח, שעת הדפסה עם סימון ✓, ו<strong>ספירה לאחור חיה</strong> לכל שורה. לצידה שני כפתורים — הדפס עכשיו, והעבר למטבח עכשיו.</p>
+      <aside class="aside">
+        <span class="t">קיבולת</span>
+        <p>מספר הזמנות מקסימלי לכל חלון זמן. כשמשבצת מתמלאת היא נחסמת ללקוח — לפני שהוא מגיע לתשלום.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 22 לוח הליקוט -->
+<section class="slide" data-ch="2" data-t="לוח הליקוט">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment</span>
+    <h2>לוח הליקוט — מסך נפרד, ערכת צבעים נפרדת</h2>
+    <p class="lede">כל אזור הליקוט עובד בערכה כהה משלו, כי הוא רץ על טאבלט במחסן ולא על מסך במשרד.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">DAY</span><h3>שישה מצבי יום</h3><p>יום חמישי · יום שישי · פעילות · ממתינים לאריזה · ארוזות · לפי תאריך.</p></div>
+      <div class="card lit"><span class="tick">AUTO</span><h3>הזרקה אוטומטית</h3><p>מצב ״חמישי״ או ״שישי״ שולף את המשלוחים של אותו יום <b>ובנוסף את כל האיסופים העצמיים הפתוחים</b>, שלא נופלים בין הכיסאות.</p></div>
+      <div class="card"><span class="tick">FILTER</span><h3>ארבעה מסננים</h3><p>ערוץ מכירה · מסלול חלוקה · בחירת ערים מרובה · חיפוש חופשי — ומעליהם לשוניות משלוח / איסוף.</p></div>
+      <div class="card"><span class="tick">TILES</span><h3>שש אריחי סטטוס</h3><p>לכל שלב מונה וצבע. לחיצה פותחת מגירה עם רשימת ההזמנות באותו שלב.</p></div>
+      <div class="card r"><span class="tick">MISSING</span><h3>אריח חוסרים</h3><p>כל ההזמנות עם חוסר שטרם זוכה — בלי קשר ליום או לסטטוס.</p></div>
+      <div class="card"><span class="tick">IMPORT</span><h3>ייבוא מסלולים</h3><p>קובץ אקסל של מסלולים נטען ישירות מהמסך.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">כשבוחרים מסלול חלוקה, <strong>הלוח מסדר את עצמו לפי סדר העצירות של הנהג</strong>, כל כרטיס מקבל תג ״עצירה 7״, ואם יש בקובץ עצירות בלי הזמנה תואמת — מופיעה אזהרה אדומה עם המספר המדויק.</p>
+  </div>
+</section>
+
+<!-- 23 ליקוט כמותי -->
+<section class="slide" data-ch="2" data-t="ליקוט כמותי ושיוך עובדים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment · batch</span>
+    <h2>שתי דרכים לעבוד על הרבה הזמנות יחד</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:1em">
+      <div>
+        <h3 style="font-size:calc(var(--fs)*1.2)">ליקוט כמותי</h3>
+        <p class="lede">מסמנים עשר הזמנות, והמערכת <strong>מסכמת את כל הפריטים הזהים לרשימה אחת</strong>: כל שורה היא מוצר ווריאציה עם הכמות הכוללת, ממוינת מהגדול לקטן, עם סיכום של סך היחידות ומספר סוגי המוצרים. במקום עשר הליכות למקרר — אחת.</p>
+      </div>
+      <div>
+        <h3 style="font-size:calc(var(--fs)*1.2)">שיוך לעובד</h3>
+        <p class="lede">מסמנים אוסף הזמנות ומשייכים אותן לעובד אחד. מאותו רגע הן מופיעות אצלו במסך הטאבלט, וכרטיס ההזמנה בלוח מקבל תג ״משויך ל…״.</p>
+      </div>
+    </div>
+    <aside class="aside">
+      <span class="t">בלי חשבונות משתמש</span>
+      <h3>העובדים הם רשימה, לא משתמשים</h3>
+      <p>הטאבלט במחסן מחובר בחשבון צוות אחד. זהות המלקט נבחרת מרשימת עובדים בדיאלוג — אין התחברות והתנתקות בין הזמנה להזמנה, והזמן עדיין נזקף לעובד הנכון.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 24 מסך המלקט -->
+<section class="slide" data-ch="2" data-t="מסך המלקט">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment/pick/:id</span>
+    <h2>מסך המלקט: מסלול בין המדפים</h2>
+  </div>
+  <div class="body">
+    <div class="split">
+      <ul class="tickets">
+        <li><b>קיבוץ לפי אזור אחסון</b> — הפריטים מסודרים בסדר ההליכה במחסן, לא בסדר ההזמנה. כותרת האזור נדבקת לראש המסך.</li>
+        <li><b>וריאציה בבאדג׳ גדול</b> — ״חצי קילו״ לא מוסתר בשורה קטנה; זו הטעות היקרה ביותר בליקוט.</li>
+        <li><b>כמות גדולה מאחת</b> — בעיגול בולט, כדי שלא ייקחו אחד במקום שלושה.</li>
+        <li><b>שלושה מצבים לכל פריט</b> — לוקט · חסר · הוחלף (עם טקסט חלופה).</li>
+        <li><b>הערת לקוח בראש</b> — באנר בולט לפני הפריטים.</li>
+        <li><b>שעון עצר רץ</b> — נגזר משעת ההתחלה בשרת, כך שרענון דף לא מאפס אותו.</li>
+        <li><b>סיום נעול</b> — כפתור ״סיום ליקוט״ לא נפתח עד שכל פריט סומן.</li>
+      </ul>
+      <aside class="aside">
+        <span class="t">אנטי־זיוף</span>
+        <h3>הזמנים נכתבים בשרת</h3>
+        <p>התחלה וסיום של ליקוט ואריזה נרשמים דרך פעולות מסד מאובטחות, לא מהדפדפן. משך העבודה מחושב בטריגר — אי אפשר ״לשפר״ אותו מהמסך.</p>
+      </aside>
+    </div>
+    <div class="perf"></div>
+    <div class="chips">
+      <span class="chip">ממתין לליקוט</span><span class="chip on">בליקוט</span><span class="chip">ממתין לאריזה</span><span class="chip on">באריזה</span><span class="chip g">נלקט ונארז</span>
+    </div>
+  </div>
+</section>
+
+<!-- 25 מסך האורז -->
+<section class="slide" data-ch="2" data-t="מסך האורז והחלות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment/pack/:id</span>
+    <h2>אריזה: קרטונים, שקיות וחלות</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <dl class="rows">
+        <div class="row"><dt>מי ארז</dt><dd>דיאלוג בחירת עובד בסיום, בדיוק כמו בליקוט. הזמן נשמר בנפרד מזמן הליקוט.</dd></div>
+        <div class="row"><dt>ספירת אריזה</dt><dd>מספר קרטונים ומספר שקיות נשמרים על ההזמנה — ומופיעים אחר כך על כרטיס הלוח ובדוח ביקורת הנהג.</dd></div>
+        <div class="row"><dt>מצב חלות</dt><dd>שלוש אפשרויות: אין חלות · החלות יוצאות עכשיו · <b>לאסוף חלות מחר</b>.</dd></div>
+        <div class="row"><dt>מדבקת חלות למחר</dt><dd>מדבקה ברוחב 80 מ״מ עם מספר הזמנה, שם לקוח, עיר, סוג חלה וכמות — כדי שהמאפייה תדע מה להוציא בבוקר.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">איך מזוהה חלה</span>
+      <h3>תג על המוצר, לא ניחוש</h3>
+      <p>מוצר מסומן בתג ייעודי, ובנוסף יש זיהוי לפי שם בעברית וגיבוי לפי קטגוריה. מסך האורז מסכם אוטומטית את כל שורות החלה בהזמנה לפי סוג וכמות.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 26 חוסרים וזיכויים -->
+<section class="slide" data-ch="2" data-t="חוסרים וזיכויים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment/credits</span>
+    <h2>פריט שחסר הופך אוטומטית לשקלים</h2>
+  </div>
+  <div class="body">
+    <div class="flow" style="grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr))">
+      <div class="step"><em>01</em><h3>סימון</h3><p>המלקט מסמן פריט כחסר, עם כמות חסרה</p></div>
+      <div class="step"><em>02</em><h3>חישוב</h3><p>כמות × מחיר יחידה מההזמנה המקורית</p></div>
+      <div class="step"><em>03</em><h3>איסוף</h3><p>ההזמנה נכנסת לאריח החוסרים ולדוח הזיכויים</p></div>
+      <div class="step"><em>04</em><h3>זיכוי</h3><p>לחיצה על ״זוכה״ מסמנת תאריך זיכוי ומוציאה מהרשימה</p></div>
+      <div class="step"><em>05</em><h3>הדפסה</h3><p>דוח זיכויים: הזמנה, פריט, כמות, מחיר, סכום, סה״כ</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <p class="lede">מקור אמת אחד: אין טבלת זיכויים נפרדת שאפשר לשכוח לעדכן. הזיכוי הוא <strong>אותה שורת ליקוט</strong> שסומנה כחסרה, עם חותמת זיכוי — כך שדוח הזיכויים תמיד תואם למה שקרה בפועל במחסן.</p>
+      <aside class="aside">
+        <span class="t">גם החלפות</span>
+        <p>פריט שהוחלף נרשם עם טקסט החלופה, כדי שאפשר יהיה להסביר ללקוח מה קיבל במקום מה שהזמין.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 27 הגדרות ליקוט ודוחות -->
+<section class="slide" data-ch="2" data-t="אזורי אחסון, עובדים ודוחות ליקוט">
+  <div class="head">
+    <span class="eyebrow">‎/admin/fulfillment/settings · reports · tablet</span>
+    <h2>מה שמאחורי מסכי הליקוט</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">AREAS</span><h3>אזורי אחסון</h3><p>רשימת אזורים בסדר מסלול, נגררים לשינוי סדר, עם צבע ומתג פעיל.</p></div>
+      <div class="card"><span class="tick">MAPPING</span><h3>שיוך מוצרים</h3><p>כל מוצר משויך לאזור. מוצר בלי שיוך נופל לאזור ״ללא שיוך״ ולא נעלם.</p></div>
+      <div class="card"><span class="tick">STAFF</span><h3>עובדי ליקוט</h3><p>רשימת עובדים עם סדר ומתג פעיל — מנותקת ממשתמשי המערכת.</p></div>
+      <div class="card"><span class="tick">REPORTS</span><h3>דוחות ליקוט</h3><p>זמן ליקוט, זמן אריזה, מי ביצע, סכום ההזמנה וממוצעים — עם סינון.</p></div>
+      <div class="card"><span class="tick">TABLET</span><h3>מסך טאבלט</h3><p>תצוגה ייעודית לעמדת המחסן, עם ההזמנות שמשויכות לעובד.</p></div>
+      <div class="card"><span class="tick">SHEET</span><h3>דף ליקוט מודפס</h3><p>מקובץ לפי אזור בסדר המסלול, עם אפשרות להסתיר את כותרות האזורים.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">הסטטוס הפנימי של הליקוט <strong>לא נוגע בסטטוס ההזמנה הציבורי</strong>. המחסן יכול להיות באמצע אריזה בזמן שהלקוח עדיין רואה ״בהכנה״ — שתי מערכות מקבילות שלא דורכות אחת על השנייה.</p>
+  </div>
+</section>
+
+<!-- 28 מדבקות -->
+<section class="slide" data-ch="2" data-t="מדבקות מוצרים וכיול">
+  <div class="head">
+    <span class="eyebrow">‎/admin/product-stickers</span>
+    <h2>מדבקות — כולל כיול למדפסת שלכם</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <dl class="rows">
+      <div class="row"><dt>יחידות למדבקה</dt><dd>לכל מוצר: מדבקה אחת ליחידה, מדבקה אחת לכל N יחידות, או <b>אפס</b> — מוצר שלא מקבל מדבקה בכלל.</dd></div>
+      <div class="row"><dt>כיול ידני</dt><dd>הזזה במילימטרים בציר X ובציר Y, וגודל גופן השם — כי אף שתי מדפסות מדבקות לא מיושרות אותו דבר.</dd></div>
+      <div class="row"><dt>ספירה על המדבקה</dt><dd>מתג שמוסיף אחרי הכמות סימון של ״מתוך כמה״, כדי לוודא שכל היחידות הגיעו.</dd></div>
+      <div class="row"><dt>תמונת לייבל</dt><dd>למוצר אפשר להעלות תמונת לייבל מעוצבת משלו.</dd></div>
+      <div class="row"><dt>הדפסת טווח</dt><dd>דיאלוג שמדפיס מדבקות לטווח מספרי הזמנה שלם.</dd></div>
+      <div class="row"><dt>שמירת סדר</dt><dd>בהדפסה ממסלול, המדבקות יוצאות בסדר הנסיעה ולא בסדר אקראי.</dd></div>
+    </dl>
+    <aside class="aside">
+      <span class="t">תשתית הדפסה</span>
+      <h3>גליל רציף, בלי שוליים</h3>
+      <p>הבונים מודפסים בגודל 80 מ״מ ברוחב וגובה אוטומטי, עם שוליים אפס — כדי שמדפסת הגליל לא תחתוך את סוף הבון. הכלל הזה נאכף גלובלית כדי ששום עמוד לא יחזיר אותו ל־A4.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 29 מחיצה 3 -->
+<section class="slide chapter" data-ch="3" data-t="פרק 3 · משלוחים ונהגים">
+  <div class="bon">
+    <span class="k">CHAPTER</span><span class="n num">03</span>
+    <div class="line"></div>
+    <h2>משלוחים ונהגים</h2>
+    <p class="d">אזורים, חלונות אספקה, מסלולים, שיבוץ, עמוד הנהג, לוח בקרה חי, שעון עבודה ו־LionWheel.</p>
+    <div class="line"></div>
+    <span class="k">6 SCREENS · LIVE TRACKING</span>
+  </div>
+</section>
+
+<!-- 30 אזורי משלוח -->
+<section class="slide" data-ch="3" data-t="אזורי משלוח">
+  <div class="head">
+    <span class="eyebrow">‎/admin/delivery</span>
+    <h2>אזור משלוח הוא לא רק מחיר</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <dl class="rows">
+      <div class="row"><dt>ערים באזור</dt><dd>רשימת ערים שנכללות באזור, ומתג פעיל לכל אזור.</dd></div>
+      <div class="row"><dt>מחיר לפי ערוץ</dt><dd>מחיר בסיס, מחיר נפרד לסופ״ש, ומחיר ייעודי לכל ערוץ אירוע — טבלת מחירים אחת לכל אזור.</dd></div>
+      <div class="row"><dt>ימי חלוקה</dt><dd>הימים שבהם מחלקים לאזור. הלקוח שבוחר עיר רואה <b>רק</b> את הימים הרלוונטיים.</dd></div>
+      <div class="row"><dt>מינימום הזמנה</dt><dd>סף לאזור, בנוסף לסף הכללי של החנות ולסף הנפרד של הסופ״ש.</dd></div>
+      <div class="row"><dt>שעת קאט־אוף</dt><dd>אחרי השעה הזו המשלוח של היום נסגר והלקוח מנותב ליום הבא.</dd></div>
+      <div class="row"><dt>זמן נסיעה משוער</dt><dd>דקות שמזינים פעם אחת — ומהן המטבח מחשב את שעת היעד אצל הלקוח.</dd></div>
+      <div class="row"><dt>אזורי חלוקה לערים</dt><dd>שיוך ערים לאזורי חלוקה פנימיים, הבסיס לבניית מסלולי הנהגים.</dd></div>
+    </dl>
+    <aside class="aside">
+      <span class="t">ליד במקום דחייה</span>
+      <h3>בקשות ערים</h3>
+      <p>לקוח מעיר שלא מחלקים אליה משאיר פרטים. הבקשה נכנסת למסך ייעודי, מונה בתפריט הצד עולה, ומופיעה <b>הודעה קופצת בזמן אמת</b> עם שם העיר.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 31 חלונות אספקה -->
+<section class="slide" data-ch="3" data-t="חלונות אספקה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/delivery-windows</span>
+    <h2>חלונות אספקה ותאריכים חסומים</h2>
+  </div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><span class="tick">WINDOW</span><h3>חלון לעיר</h3><p>״יום שישי 10:00–13:00״ — מוגדר לעיר או לאזור, ונשמר על ההזמנה כתווית קריאה שמופיעה בכל מסך ובכל הדפסה.</p></div>
+      <div class="card"><span class="tick">PICKUP</span><h3>חלון איסוף עצמי</h3><p>חלון שמסומן כאיסוף — בלי דמי משלוח, עם כתובת האיסוף וההוראות שלכם.</p></div>
+      <div class="card"><span class="tick">BLOCKED</span><h3>תאריכים חסומים</h3><p>חגים, ספירת מלאי או חופשה — נחסמים מראש ואינם ניתנים לבחירה.</p></div>
+      <div class="card"><span class="tick">CAPACITY</span><h3>קיבולת</h3><p>תקרת הזמנות למשבצת. כשהיא מתמלאת המשבצת נסגרת לבד.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <p class="lede">התוצאה התפעולית: אי אפשר לקבל שלושים הזמנות לאותה שעה בעיר שיש לה נהג אחד. הגבול נאכף בקופה, לא בטלפון למחרת.</p>
+      <aside class="aside">
+        <span class="t">איך מזוהה איסוף</span>
+        <p>הזמנה ללא אזור משלוח, או כזו שתווית החלון שלה מתחילה ב״איסוף עצמי״. התוצאה נשמרת פעם אחת על רשומת הליקוט כדי לא להישען על טקסט לנצח.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 32 מסך המסלולים -->
+<section class="slide" data-ch="3" data-t="מסך המסלולים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/deliveries</span>
+    <h2>מסלולי הנהגים של היום</h2>
+    <p class="lede">בוחרים תאריך וערוץ, מושכים את המסלולים, ומקבלים כרטיס לכל נהג.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">PULL</span><h3>משיכה וסנכרון</h3><p>הדפדפן רק רושם בקשה; טריגר במסד מריץ את המשיכה בצד השרת, והמסך מציג התקדמות עד ״הושלם״ או שגיאה מפורטת.</p></div>
+      <div class="card"><span class="tick">DRIVER</span><h3>פרטי נהג</h3><p>שם, טלפון שנשמר גם בכרטיס הנהג, ומספר אזור ידני כמו ״1־א״.</p></div>
+      <div class="card"><span class="tick">CODE</span><h3>קוד כניסה</h3><p>קוד מספרי שהנהג מקליד בקישור שלו. אפשר לשנות או להסיר בכל רגע.</p></div>
+      <div class="card"><span class="tick">LINK</span><h3>שליחה בוואטסאפ</h3><p>כפתור שפותח הודעה מוכנה לנהג עם שם המסלול, האזור, הקישור וקוד הכניסה.</p></div>
+      <div class="card"><span class="tick">STOPS</span><h3>רשימת עצירות</h3><p>מספר סידורי, שם, כתובת מלאה עם בניין, קומה, דירה וקוד כניסה, טלפון וסטטוס מסירה. לחיצה פותחת את ההזמנה.</p></div>
+      <div class="card"><span class="tick">PROGRESS</span><h3>התקדמות</h3><p>פס לכל מסלול: כמה נמסרו מתוך כמה.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 33 שיבוץ -->
+<section class="slide" data-ch="3" data-t="שיבוץ הזמנות לנהגים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/deliveries · assignment</span>
+    <h2>השאלה היחידה שחשובה בערב חלוקה</h2>
+    <p class="lede">האם יש הזמנה שאף נהג לא לוקח?</p>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="stats s5">
+      <div class="stat"><b class="num">—</b><span>הזמנות חדשות</span></div>
+      <div class="stat"><b class="num">—</b><span>משובצות אצל נהגים</span></div>
+      <div class="stat" style="border-color:color-mix(in srgb,var(--red) 45%,var(--line))"><b class="num" style="color:var(--red)">—</b><span>לא משובצות</span></div>
+      <div class="stat"><b class="num">—</b><span>נמסרו</span></div>
+      <div class="stat"><b class="num">—</b><span>איסוף עצמי</span></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>פס התקדמות</dt><dd>אחוז ההזמנות ששובצו, בראש המסך.</dd></div>
+        <div class="row"><dt>רשימת הלא־משובצות</dt><dd>כפתור שפותח את מספרי ההזמנה שנשארו בחוץ — כדי לשבץ אותן ידנית לפני היציאה.</dd></div>
+        <div class="row"><dt>איסוף עצמי בנפרד</dt><dd>נספר לחוד ולא נחשב ״לא משובץ״, כי הוא לא אמור להיות אצל נהג.</dd></div>
+        <div class="row"><dt>מתעדכן לבד</dt><dd>מנוי זמן אמת על העצירות וההזמנות, ובנוסף רענון כל 30 שניות כגיבוי.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">מסונן לפי ערוץ</span>
+        <p>אפשר להסתכל על התמונה של ראש השנה בלבד, של הסופ״ש בלבד או של הכול יחד — הבחירה נשמרת בין ביקורים.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 34 עמוד הנהג -->
+<section class="slide" data-ch="3" data-t="עמוד הנהג">
+  <div class="head">
+    <span class="eyebrow">‎/d/:token</span>
+    <h2>לנהג יש עמוד, לא אפליקציה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <p class="lede">כל מסלול מקבל כתובת ייחודית עם אסימון אקראי. הנהג פותח אותה בטלפון, מקליד את קוד הכניסה, ורואה רק את המסלול שלו — בלי חשבון, בלי סיסמה, בלי התקנה.</p>
+      <dl class="rows">
+        <div class="row"><dt>רשימת עצירות</dt><dd>בסדר הנסיעה, עם שם, כתובת מלאה, טלפון והערות.</dd></div>
+        <div class="row"><dt>סימון מסירה</dt><dd>לחיצה אחת מסמנת שנמסר, עם חותמת זמן.</dd></div>
+        <div class="row"><dt>הושאר מחוץ לדלת</dt><dd>סימון נפרד למקרה שהלקוח לא היה בבית.</dd></div>
+        <div class="row"><dt>מתעדכן להנהלה מיד</dt><dd>כל סימון זורם בזמן אמת ללוח הבקרה במשרד.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">אבטחה</span>
+      <h3>אסימון + קוד</h3>
+      <p>הקישור לבדו לא מספיק: בלי הקוד המסלול לא נפתח. הקוד ניתן לשינוי או להסרה מהמשרד בכל רגע, גם באמצע הנסיעה.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 35 לוח בקרה -->
+<section class="slide" data-ch="3" data-t="לוח בקרה למסלולים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/deliveries/control-panel</span>
+    <h2>״איפה ההזמנה של גברת כהן?״</h2>
+    <p class="lede">שאלה שמגיעה בטלפון עשרים פעם בערב חלוקה — ונענית כאן בשלוש שניות.</p>
+  </div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card lit"><span class="tick">SEARCH</span><h3>חיפוש מספר הזמנה</h3><p>מקלידים מספר (עם או בלי מקף) ומקבלים: באיזה מסלול היא, אצל איזה נהג, <b>עצירה 7 מתוך 15</b>, ואם טרם נמסרה — כמה משלוחים נשארו לפניה.</p></div>
+      <div class="card"><span class="tick">SUMMARY</span><h3>שורת סיכום חיה</h3><p>סה״כ עצירות, כמה נמסרו, כמה נותרו ואחוז התקדמות.</p></div>
+      <div class="card"><span class="tick">TABLE</span><h3>מסירות לפי מסלול</h3><p>שורת התקדמות לכל מסלול ורשימת עצירות עם סטטוס ושעת מסירה. סינון: הכל / נמסרו / טרם נמסרו.</p></div>
+      <div class="card"><span class="tick">LIVE</span><h3>בלי לרענן</h3><p>ברגע שנהג מסמן מסירה — הלוח מתעדכן.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">אם ההזמנה לא נמצאת באף מסלול, המסך אומר את זה במפורש — ״לא משובצת לאף מסלול״ או ״איסוף עצמי״ — במקום להחזיר תוצאה ריקה.</p>
+  </div>
+</section>
+
+<!-- 36 שעון נהגים -->
+<section class="slide" data-ch="3" data-t="שעון עבודה והתראות">
+  <div class="head">
+    <span class="eyebrow">‎control-panel · שעון עבודה</span>
+    <h2>כמה זמן כל נהג עובד, ומי השאיר חבילה בדלת</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <h3 style="font-size:calc(var(--fs)*1.2)">שעון עבודה לנהגים</h3>
+      <ul class="tickets">
+        <li><b>התחלה</b> — שעת המסירה הראשונה במסלול.</li>
+        <li><b>סיום</b> — שעת המסירה האחרונה, מוצג רק כשהמסלול הושלם.</li>
+        <li><b>משך חי</b> — שעון ש:דד:שש שמתקתק כל שנייה למסלול פעיל, וקופא כשהוא נגמר.</li>
+        <li><b>קצב</b> — ממוצע דקות למסירה, להשוואה בין נהגים.</li>
+        <li><b>מיון</b> — פעילים קודם, אחריהם שהסתיימו, ובסוף מי שטרם התחיל.</li>
+        <li><b>סיכום כללי</b> — כמה נהגים עובדים כרגע, סך שעות העבודה היום וממוצע כללי.</li>
+      </ul>
+    </div>
+    <aside class="aside" style="--accent:var(--red)">
+      <span class="t">התראה אדומה</span>
+      <h3>הושארו מחוץ לדלת</h3>
+      <p>ריבוע ייעודי עם מספר ההזמנות שהושארו בדלת. ברגע שנהג מסמן כזו — קופצת התראה אדומה עם מספר ההזמנה והאזור, וגם התראת דפדפן אם ניתנה הרשאה. לחיצה פותחת רשימה עם לקוח, עיר, מסלול, נהג ושעה.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 37 הדפסות מסלול -->
+<section class="slide" data-ch="3" data-t="הדפסות מסלול">
+  <div class="head">
+    <span class="eyebrow">‎/admin/deliveries · print</span>
+    <h2>שבע הדפסות, כולן בסדר הנסיעה</h2>
+  </div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>הדפסה</th><th>מה יש בה</th></tr></thead>
+        <tbody>
+          <tr><td>דף מסלול לנהג</td><td>מספר, שם, כתובת מלאה, עיר, טלפון, מספר הזמנה, הערות הלקוח ועמודת ✓</td></tr>
+          <tr><td>דו״ח ביקורת</td><td>אותה טבלה, אבל עם שלוש עמודות סימון: כמות קרטונים · בוצע · יצא למשלוח</td></tr>
+          <tr><td>הזמנות</td><td>דף הזמנה מלא לכל עצירה, לפי סדר הנסיעה</td></tr>
+          <tr><td>דפי מלקט</td><td>דף ליקוט לכל הזמנה, מקובץ לפי אזורי אחסון</td></tr>
+          <tr><td>ליקוט חלות</td><td>רק הזמנות עם חלות, ורק שורות החלות שבהן</td></tr>
+          <tr><td>מדבקות קרטונים</td><td>עם מספר האזור של המסלול על כל מדבקה</td></tr>
+          <tr><td>מדבקות מוצרים</td><td>לפי הגדרת היחידות של כל מוצר, בסדר העצירות</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="split">
+      <p class="lede">״הדפס כל האזורים״ מוציא דף לכל מסלול — כל אחד בעמוד נפרד, עם שם הנהג, הטלפון, האזור, התאריך ומספר העצירות בכותרת.</p>
+      <aside class="aside">
+        <span class="t">ניקוי הערות</span>
+        <p>בעמודת ההערות מודפס רק מה שהלקוח באמת כתב. שורות האישור האוטומטיות של הסליקה מנוקות החוצה, כדי שהנהג לא יקרא זבל טכני.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 38 LionWheel -->
+<section class="slide" data-ch="3" data-t="חיבור LionWheel">
+  <div class="head">
+    <span class="eyebrow">‎/admin/lionwheel</span>
+    <h2>חיבור לחברת המשלוחים</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <dl class="rows">
+        <div class="row"><dt>חיבור</dt><dd>שדה למפתח API, מצב חיבור (מחובר / לא מחובר / שגיאה) וכפתור בדיקת חיבור אמיתי מול השירות.</dd></div>
+        <div class="row"><dt>נקודת איסוף</dt><dd>שם העסק, עיר, רחוב, מספר וטלפון — פרטי מקור המשלוח.</dd></div>
+        <div class="row"><dt>שליחה אוטומטית</dt><dd>מתג: לשלוח כל הזמנה שסומנה כשולמה, או לשלוח רק ידנית.</dd></div>
+        <div class="row"><dt>סינון</dt><dd>רק הזמנות משלוח (לא איסוף), ואפשר להגביל לערוצי מכירה מסוימים.</dd></div>
+        <div class="row"><dt>יומן שליחות</dt><dd>טבלת השליחות האחרונות: הזמנה, זמן, הצלחה או כשל, וקוד השגיאה המלא מהשירות.</dd></div>
+        <div class="row"><dt>על ההזמנה</dt><dd>מזהה משימה, מזהה ציבורי, קישור מעקב ותאריך שליחה — נשמרים ומוצגים במסך ההזמנות.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">איפה המפתח</span>
+      <h3>אף פעם לא בדפדפן</h3>
+      <p>מפתח ה־API נשמר כסוד בצד השרת. המסך מציג רק ״מוגדר״ או ״לא מוגדר״ — הערך עצמו לא נשלף לעולם אל הלקוח.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 39 מחיצה 4 -->
+<section class="slide chapter" data-ch="4" data-t="פרק 4 · קטלוג, תוכן ושיווק">
+  <div class="bon">
+    <span class="k">CHAPTER</span><span class="n num">04</span>
+    <div class="line"></div>
+    <h2>קטלוג, תוכן ושיווק</h2>
+    <p class="d">מוצרים, קטגוריות, מנות עסקיות, קייטרינג, ערוצי מכירה, בונה דף הבית, מדיה, פופאפים ודיוור.</p>
+    <div class="line"></div>
+    <span class="k">10 SCREENS</span>
+  </div>
+</section>
+
+<!-- 40 מוצרים -->
+<section class="slide" data-ch="4" data-t="ניהול מוצרים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/products</span>
+    <h2>28 שדות מאחורי כל מוצר</h2>
+  </div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><span class="tick">זהות</span><h3>שם, תיאור, מק״ט, תמונה, גלריה</h3><p>המק״ט הוא גם מפתח המיון בדפי הליקוט ובקבצי ההזמנה.</p></div>
+      <div class="card"><span class="tick">מחיר</span><h3>בסיס, מבצע ומצב תמחור</h3><p>מחיר קבוע או מחיר שנגזר מהוריאציה שנבחרה.</p></div>
+      <div class="card"><span class="tick">שיוך</span><h3>כמה קטגוריות וערוץ מכירה</h3><p>אותו מוצר יכול לחיות בכמה קטגוריות ובכמה ערוצים.</p></div>
+      <div class="card"><span class="tick">זמינות</span><h3>מלאי, הסתרה וימי זמינות</h3><p>שלושה מתגים נפרדים שלא מתבלבלים ביניהם.</p></div>
+      <div class="card"><span class="tick">מידע</span><h3>רכיבים, אלרגנים, כשרות, תגיות תזונה</h3><p>מוצג ללקוח ומודפס במקום שצריך.</p></div>
+      <div class="card"><span class="tick">מיוחדים</span><h3>מארז, אימות גיל, מדבקות</h3><p>מוצר־מארז מורכב ממוצרים אחרים בכמויות; מוצר שדורש אישור גיל נחסם עד אישור.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <p class="lede">בנוסף: <strong>שכפול מוצר</strong>, סדר תצוגה ידני, תגיות חדש / פופולרי / מומלץ עם אפשרות להעלות תמונת תג מעוצבת משלכם לכל אחת, ותמונת לייבל נפרדת להדפסה.</p>
+      <aside class="aside">
+        <span class="t">עריכה מרוכזת</span>
+        <p>דיאלוג וריאציות מרוכז מגדיר את אותה סדרת גדלים על עשרות מוצרים בבת אחת, במקום לפתוח כל מוצר בנפרד.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 41 וריאציות ותוספות -->
+<section class="slide" data-ch="4" data-t="וריאציות וקבוצות תוספות">
+  <div class="head">
+    <span class="eyebrow">‎products · variations & addons</span>
+    <h2>וריאציות וקבוצות תוספות</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:1em">
+      <div>
+        <h3 style="font-size:calc(var(--fs)*1.2)">וריאציות</h3>
+        <p class="lede">מספר בלתי מוגבל. לכל אחת שם, שינוי מחיר, תווית גודל, תמונה, זמינות <strong>ומלאי נפרד</strong>. שם הוריאציה נשמר על שורת ההזמנה ומודגש בבון, במסך המלקט ובמדבקה.</p>
+      </div>
+      <div>
+        <h3 style="font-size:calc(var(--fs)*1.2)">קבוצות תוספות</h3>
+        <p class="lede">לכל קבוצה: חובה או רשות, מינימום ומקסימום פריטים, ורשימת אופציות שלכל אחת מחיר, זמינות ותמונה. הבחירות נשמרות על שורת ההזמנה ומודפסות כשורות משנה מתחת לפריט.</p>
+      </div>
+    </div>
+    <aside class="aside">
+      <span class="t">שלוש טבלאות</span>
+      <h3>מבנה נתונים ייעודי</h3>
+      <p>וריאציות, קבוצות תוספות ואופציות התוספות יושבות בטבלאות נפרדות עם קשרים למוצר — לא בשדה טקסט. לכן אפשר לדווח עליהן, לתמחר אותן ולנהל להן מלאי.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 42 קטגוריות -->
+<section class="slide" data-ch="4" data-t="קטגוריות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/categories</span>
+    <h2>קטגוריה שיודעת מתי היא פתוחה</h2>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><h3>ימי זמינות</h3><p>קטגוריית חלות מופיעה רק בחמישי ושישי; בשאר השבוע היא לא קיימת בתפריט.</p></div>
+      <div class="card"><h3>חלון שעות</h3><p>שעת פתיחה וסגירה — ארוחות בוקר עד 11:00, למשל.</p></div>
+      <div class="card"><h3>תמונה כפולה</h3><p>קובץ לדסקטופ וקובץ למובייל, ואפשרות להסתיר את הבאנר בכל מסך בנפרד.</p></div>
+      <div class="card"><h3>הצגה בדף הבית</h3><p>מתג נפרד מהמתג של הופעה בתפריט.</p></div>
+      <div class="card"><h3>סדר ידני</h3><p>גרירה קובעת את הסדר, לא תאריך ההוספה.</p></div>
+      <div class="card"><h3>כתובת קבועה</h3><p>slug קריא שנוצר אוטומטית ונשמר ייחודי בפעולת מסד ייעודית.</p></div>
+      <div class="card"><h3>אייקון</h3><p>אייקון לצד השם בתפריט הצד ובסרגל הקטגוריות.</p></div>
+      <div class="card"><h3>שיוך לערוץ</h3><p>יומי, סופ״ש, ערוץ אירוע או כל הערוצים יחד.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 43 מנות עסקיות -->
+<section class="slide" data-ch="4" data-t="מנות עסקיות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/business-meals</span>
+    <h2>מנה עסקית שמתחלפת כל יום בשבוע</h2>
+    <p class="lede">מודול נפרד לגמרי מהקטלוג, עם שבע הגדרות — אחת לכל יום.</p>
+  </div>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card"><span class="tick">MEAL</span><h3>המנה</h3><p>מחיר בסיס, תמונה, ימי זמינות, שיוך לקטגוריה או למוצר</p></div>
+      <div class="card"><span class="tick">SIDES</span><h3>קבוצת תוספות ליום</h3><p>שדה נפרד לראשון, שני, שלישי… שבת</p></div>
+      <div class="card"><span class="tick">SALADS</span><h3>קבוצת סלטים ליום</h3><p>ציר שני, אותו עיקרון</p></div>
+      <div class="card"><span class="tick">UPSELL</span><h3>קבוצת אפסייל</h3><p>מחיר רגיל ומחיר מיוחד לרוכשי מנה</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>כללי בחירה</dt><dd>כמות כלולה, מינימום, מקסימום, מחיר לפריט מעבר לכלול, ואפשרות לבחור אותו פריט פעמיים.</dd></div>
+        <div class="row"><dt>אופציית ״בלי״</dt><dd>בחירה ריקה עם תווית משלה — ״בלי סלט״, ״בלי תוספת״.</dd></div>
+        <div class="row"><dt>תוספות גלובליות</dt><dd>חלות על כל המנות; מתג פשוט או שדה כמות עם תקרה, ואפשרות להופיע אוטומטית בכל מנה.</dd></div>
+        <div class="row"><dt>חוסרים יומיים</dt><dd>טבלת חוסרים ייעודית למנות — פריט שנגמר היום נעלם מהבחירה מיד.</dd></div>
+        <div class="row"><dt>תבניות ימים</dt><dd>שמירת סט קבוצות־ליום כתבנית, לשכפול למנות נוספות.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">שמונה טבלאות</span>
+        <p>מנות, קבוצות תוספות, פריטי תוספות, קבוצות סלטים, סלטים, קבוצות אפסייל, פריטי אפסייל, תוספות גלובליות — ועוד טבלת חוסרים ותבניות.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 44 קייטרינג -->
+<section class="slide" data-ch="4" data-t="קייטרינג">
+  <div class="head">
+    <span class="eyebrow">‎/admin/catering</span>
+    <h2>תפריטי קייטרינג עם תמחור לפי סועדים</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <dl class="rows">
+      <div class="row"><dt>תפריט</dt><dd>מחיר בסיס למנה, מינימום סועדים, תיאור, תמונה, הערת ״מה כלול״ והערה ללקוח.</dd></div>
+      <div class="row"><dt>חמישה סוגי קבוצות</dt><dd>סלטים · פתיחים · עיקריות · תוספות · תוספות בתשלום. לכל קבוצה כמות כלולה ומחיר לפריט מעבר לה.</dd></div>
+      <div class="row"><dt>פריט עם תוספת מחיר</dt><dd>פריט יקר בתוך קבוצה יכול לשאת מחיר אישי משלו.</dd></div>
+      <div class="row"><dt>שתי שיטות תמחור לתוספות</dt><dd>לפי מנה או ליחידה — באותו תפריט.</dd></div>
+      <div class="row"><dt>הסתרה בכל רמה</dt><dd>תפריט, קבוצה, פריט ותוספת — כולם ניתנים להסתרה בלי מחיקה.</dd></div>
+      <div class="row"><dt>סדר ומתג פעיל</dt><dd>סדר תצוגה ידני לכל רמה, ומתג פעיל לתפריט.</dd></div>
+    </dl>
+    <aside class="aside">
+      <span class="t">שליטה מלמעלה</span>
+      <h3>מתג אחד לכל המודול</h3>
+      <p>אפשר לכבות את הקייטרינג לגמרי — הקישור והעמוד נעלמים — או להשאיר פעיל ולהחליט בנפרד אם הוא מופיע בגריד הקטגוריות בדף הבית.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 45 ערוצי מכירה -->
+<section class="slide" data-ch="4" data-t="ערוצי מכירה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/channels</span>
+    <h2>ערוצי מכירה — כמה חנויות באתר אחד</h2>
+    <p class="lede">אותו אתר, אותו מסד — אבל תפריט, מחירים, ימי חלוקה, מינימום ומספור הזמנות נפרדים.</p>
+  </div>
+  <div class="body">
+    <div class="chips">
+      <span class="chip on">יומי</span><span class="chip on">שוק סופ״ש</span><span class="chip on">ראש השנה</span><span class="chip">משותף</span>
+    </div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>הגדרת ערוץ</dt><dd>שם תצוגה, מזהה, אימוג׳י, סוג, סדר, מתג פעיל, <b>קידומת למספרי ההזמנה</b> וגוש הגדרות משלו.</dd></div>
+        <div class="row"><dt>סגירה שבועית</dt><dd>חלון קבוע שחוזר כל שבוע — למשל שישי 14:00 עד ראשון 09:00.</dd></div>
+        <div class="row"><dt>סגירה בתאריך</dt><dd>לערוצי אירוע: תאריך ושעה מדויקים לפתיחה ולסגירה, לפי שעון ירושלים.</dd></div>
+        <div class="row"><dt>הודעות נפרדות</dt><dd>הודעת סגירה, הודעת אישור הזמנה, מייל התראות, מינימום הזמנה, סף משלוח חינם ואפסייל — לכל ערוץ בנפרד.</dd></div>
+        <div class="row"><dt>הערת תחתית להדפסה</dt><dd>טקסט שמודפס בתחתית הקבלות של אותו ערוץ.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">למה זה קריטי</span>
+        <h3>המטבח מזהה לפי המספר</h3>
+        <p>הקידומת בערוץ גורמת לכך שברגע שמישהו קורא מספר הזמנה בקול, כולם יודעים אם מדובר בהזמנה יומית או בהזמנת חג.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 46 בונה דף הבית -->
+<section class="slide" data-ch="4" data-t="בונה דף הבית">
+  <div class="head">
+    <span class="eyebrow">‎/admin/homepage</span>
+    <h2>דף הבית נבנה מסקשנים, לא מקוד</h2>
+  </div>
+  <div class="body">
+    <div class="chips">
+      <span class="chip on">hero</span><span class="chip on">products</span><span class="chip on">categories</span><span class="chip on">promotions</span>
+      <span class="chip on">benefits</span><span class="chip on">about</span><span class="chip on">testimonials</span><span class="chip on">cta</span>
+      <span class="chip on">newsletter</span><span class="chip on">custom</span>
+    </div>
+    <div class="perf"></div>
+    <dl class="rows">
+      <div class="row"><dt>ניהול הרשימה</dt><dd>אייקון, שם, מתג הפעלה, גרירה לשינוי סדר, שכפול, מחיקה ועריכה.</dd></div>
+      <div class="row"><dt>עורך בחמישה טאבים</dt><dd>תוכן · עיצוב · דסקטופ · מובייל · נראות — כולל טקסטים, תמונות נפרדות, כפתורים, צבעי רקע וטקסט, יישור, מרווחים, גובה, עיגול פינות, ו<b>כמות פריטים שונה לדסקטופ ולמובייל</b>.</dd></div>
+      <div class="row"><dt>טיוטה ופרסום</dt><dd>שומרים כטיוטה, בודקים בתצוגה מקדימה בחלון חדש, ורק אז מפרסמים. הציבור רואה רק מה שפורסם.</dd></div>
+      <div class="row"><dt>ביקורות לקוחות</dt><dd>טאב ניהול נפרד: שם, דירוג, טקסט, תמונה, אישור וסדר.</dd></div>
+      <div class="row"><dt>באנר ראשי</dt><dd>ארבעה סוגים — באנר, מעבר רך, קרוסלה ומבצע — עם שקופיות שמסומנות לערוץ מכירה, גובה נפרד למובייל וכפתורים מותאמים.</dd></div>
+      <div class="row"><dt>מתג בטיחות</dt><dd>מתג יחיד מחזיר את דף הבית הישן בדיוק כפי שהיה. שום סקשן לא נמחק בדרך.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- 47 תוכן ומדיה -->
+<section class="slide" data-ch="4" data-t="ניהול תוכן ומדיה">
+  <div class="head">
+    <span class="eyebrow">‎/admin/content · /admin/faq · /admin/media</span>
+    <h2>תוכן, שאלות ותשובות וספריית מדיה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">CONTENT</span><h3>ניהול תוכן</h3><p>טקסטים של האתר, פוטר, תקנון שהלקוח נדרש לאשר, ולוגו כשרות שמופיע גם בהדפסות.</p></div>
+      <div class="card"><span class="tick">FAQ</span><h3>שאלות ותשובות</h3><p>שאלה, תשובה, קטגוריה, סדר ומתג הצגה — עם כותרת ותת־כותרת לעמוד ואפשרות להציג בפוטר.</p></div>
+      <div class="card"><span class="tick">MEDIA</span><h3>ספריית מדיה</h3><p>מאגר תמונות מרכזי לכל המסכים: באנרים, קטגוריות, מוצרים, פופאפים ומדיוור.</p></div>
+      <div class="card"><span class="tick">FONTS</span><h3>גופנים וטיפוגרפיה</h3><p>העלאת גופן כותרות וגופן גוף לכל משקל בנפרד, ושליטה בגודל ובמשקל לכל אלמנט.</p></div>
+      <div class="card"><span class="tick">BRAND</span><h3>מיתוג</h3><p>לוגו, תמונות באנר, שכבות כהות, תמונות תגיות מותאמות ותמונת תחתית לקבלה.</p></div>
+      <div class="card"><span class="tick">LEGAL</span><h3>קוקיז ופרטיות</h3><p>באנר הסכמה עם נוסח משלכם וקישור למדיניות פרטיות; בלי אישור — לא נטען שום מעקב.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 48 פופאפים -->
+<section class="slide" data-ch="4" data-t="מנוע הפופאפים">
+  <div class="head">
+    <span class="eyebrow">‎/admin/popups</span>
+    <h2>מנוע פופאפים עם 54 שדות</h2>
+    <p class="lede">לא ״חלון שקופץ״ — מערכת מיקוד עם טריגרים, קהלים, תדירות ובדיקות A/B.</p>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">TRIGGER</span><h3>מתי לקפוץ</h3><p>לפי השהיה בשניות, אחוז גלילה, או אירוע באתר.</p></div>
+      <div class="card"><span class="tick">WHERE</span><h3>באילו עמודים</h3><p>רשימת הכללה או רשימת החרגה — הפופאפ מופיע רק איפה שצריך.</p></div>
+      <div class="card"><span class="tick">WHO</span><h3>לאיזה קהל</h3><p>לפי סוג מבקר ולפי מספר ימים מהביקור האחרון.</p></div>
+      <div class="card"><span class="tick">WHEN</span><h3>מתי בזמן</h3><p>תאריך התחלה וסיום, ימים פעילים בשבוע וחלון שעות.</p></div>
+      <div class="card"><span class="tick">DEVICE</span><h3>מכשירים</h3><p>מובייל, דסקטופ או שניהם — עם תמונה נפרדת למובייל.</p></div>
+      <div class="card"><span class="tick">FREQUENCY</span><h3>תדירות</h3><p>פעם אחת, כל X ימים, בכל ביקור — ומה קורה אחרי סגירה ואחרי לחיצה.</p></div>
+      <div class="card lit"><span class="tick">A/B</span><h3>בדיקת A/B</h3><p>וריאנט ב׳ ואחוז פיצול — שתי גרסאות רצות במקביל.</p></div>
+      <div class="card"><span class="tick">STYLE</span><h3>עיצוב</h3><p>גודל או מידות מותאמות, התאמה לתמונה, אנימציה ומשך, צבע רקע, שקיפות וטשטוש, סגירה בלחיצה בחוץ או ב־Esc, סגירה אוטומטית.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">שתי טבלאות נוספות מתעדות את ההתנהגות: <strong>אירועי פופאפ</strong> (הצגות, סגירות, לחיצות) ו<strong>היסטוריית הצגה</strong> לכל מבקר — כדי שהתדירות באמת תיאכף.</p>
+  </div>
+</section>
+
+<!-- 49 דיוור -->
+<section class="slide" data-ch="4" data-t="מערכת הדיוור">
+  <div class="head">
+    <span class="eyebrow">‎/admin/newsletter</span>
+    <h2>מערכת דיוור מלאה בתוך המערכת</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <div class="chips">
+        <span class="chip on">לקוחות</span><span class="chip on">אנשי קשר מיובאים</span><span class="chip r">הוסרו מהתפוצה</span><span class="chip">היסטוריית שליחות</span>
+      </div>
+      <dl class="rows">
+        <div class="row"><dt>רשימות</dt><dd>לקוחות המערכת + אנשי קשר מיובאים מקובץ, עם תגיות וקבוצות, חיפוש, בחירת הכל והוספה ידנית.</dd></div>
+        <div class="row"><dt>ייבוא</dt><dd>קובץ עד 5MB, עם דיווח מפורט על כתובות שנכשלו.</dd></div>
+        <div class="row"><dt>הסרות</dt><dd>רשימת הסרה שמדולגת אוטומטית בכל שליחה — עם אפשרות להחזיר כתובת לרשימה.</dd></div>
+        <div class="row"><dt>עורך</dt><dd>עריכה חזותית (הדגשה, נטוי, קו תחתון, יישור, קישור, העלאת תמונה) או עריכת HTML גולמי, עם מעבר בין השניים.</dd></div>
+        <div class="row"><dt>תבניות</dt><dd>תבנית רספונסיבית מוכנה ותבנית חג — נטענות בלחיצה.</dd></div>
+        <div class="row"><dt>אישית</dt><dd>שדות אישיים בגוף המייל: שם הנמען וכתובת המייל שלו.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">שליחה בטוחה</span>
+      <h3>תצוגה, בדיקה, ואז שליחה</h3>
+      <p>תצוגה מקדימה בדסקטופ ובמובייל, שליחת מייל בדיקה לעצמכם, ודיאלוג אישור שמראה כמה נמענים בפועל. השליחה עצמה רצה כמשימת רקע, וההיסטוריה מציגה כמה נשלחו וכמה נכשלו.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 50 שיווק ומעקב -->
+<section class="slide" data-ch="4" data-t="שיווק, מעקב ופיד קטלוג">
+  <div class="head">
+    <span class="eyebrow">‎settings · שיווק והתראות</span>
+    <h2>מעקב, פיקסלים ופיד למטא</h2>
+  </div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><span class="tick">PIXEL</span><h3>Meta Pixel · GA4</h3><p>שדה מזהה לכל אחד. הסקריפטים נטענים רק אחרי הסכמת קוקיז.</p></div>
+      <div class="card"><span class="tick">FEED</span><h3>פיד קטלוג למטא</h3><p>פונקציית שרת שמייצרת פיד מוצרים חי לחנות בפייסבוק ובאינסטגרם — בלי להעלות קובץ ידנית.</p></div>
+      <div class="card"><span class="tick">EVENTS</span><h3>אירועי מכירה פנימיים</h3><p>הוספה לסל, כניסה לקופה ורכישה נכתבים לטבלה משלכם — ומזינים את משפך ההמרה בדוחות. הנתונים שלכם, לא של פלטפורמה חיצונית.</p></div>
+      <div class="card"><span class="tick">HEAD</span><h3>קוד מותאם</h3><p>שדה מתקדם להזרקת קוד ל־head בצד הלקוח, לכלים שאין להם שדה ייעודי.</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <p class="lede">בנוסף: כתובת מייל להתראות על הזמנות (נפרדת לערוץ הסופ״ש), קישורי פייסבוק ואינסטגרם, טלפון וואטסאפ לכפתור הצף, ו־sitemap ו־robots שמתוחזקים באתר.</p>
+      <aside class="aside">
+        <span class="t">פרט קטן</span>
+        <p>באתר יושב גם קובץ תיאור למנועי בינה מלאכותית, שמסביר בעברית מה העסק ומה יש בכל עמוד.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 51 מחיצה 5 -->
+<section class="slide chapter" data-ch="5" data-t="פרק 5 · תשתית ואבטחה">
+  <div class="bon">
+    <span class="k">CHAPTER</span><span class="n num">05</span>
+    <div class="line"></div>
+    <h2>תשתית, אבטחה ואוטומציה</h2>
+    <p class="d">מה שרץ מתחת לכל המסכים: מסד הנתונים, פונקציות השרת, המשימות המתוזמנות וההרשאות.</p>
+    <div class="line"></div>
+    <span class="k">69 TABLES · 28 FUNCTIONS · RLS</span>
+  </div>
+</section>
+
+<!-- 52 ארכיטקטורה -->
+<section class="slide" data-ch="5" data-t="ארכיטקטורה">
+  <div class="head">
+    <span class="eyebrow">‎architecture</span>
+    <h2>איך המערכת בנויה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="flow" style="grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))">
+      <div class="step"><em>שכבה 01</em><h3>ממשק</h3><p>React + TypeScript, טעינה עצלה לכל מסך, ניהול מצב ומטמון שאילתות, RTL מלא</p></div>
+      <div class="step"><em>שכבה 02</em><h3>מסד נתונים</h3><p>Postgres עם 69 טבלאות, טריגרים, 20 פעולות מאובטחות והרשאות ברמת השורה</p></div>
+      <div class="step"><em>שכבה 03</em><h3>פונקציות שרת</h3><p>28 פונקציות Deno לכל מה שאסור שיקרה בדפדפן: סליקה, מיילים, משלוחים, PDF</p></div>
+      <div class="step"><em>שכבה 04</em><h3>מתזמן</h3><p>משימות pg_cron שמריצות את התהליכים גם כשאף אחד לא מחובר</p></div>
+      <div class="step"><em>שכבה 05</em><h3>זמן אמת</h3><p>מנויים חיים על הזמנות, בקשות שינוי, עצירות משלוח, ערוצים ובקשות ערים</p></div>
+    </div>
+    <div class="perf"></div>
+    <div class="split">
+      <dl class="rows">
+        <div class="row"><dt>עמידות בפריסה</dt><dd>אם קובץ קוד התיישן אחרי עדכון גרסה, המסך מזהה זאת ומרענן פעם אחת בלבד — במקום להיתקע על מסך לבן.</dd></div>
+        <div class="row"><dt>מטמון חכם</dt><dd>נתונים נחשבים טריים חמש דקות ונשמרים בזיכרון חצי שעה, בלי שליפה מחדש בכל מעבר בין טאבים.</dd></div>
+        <div class="row"><dt>שליפה בעמודים</dt><dd>כל דוח כבד עובר את מגבלת 1,000 השורות בשליפה עמוד־אחר־עמוד.</dd></div>
+      </dl>
+      <aside class="aside">
+        <span class="t">אפליקציה מותקנת</span>
+        <p>האתר רשום כאפליקציה שאפשר להתקין על מסך הבית, עם קובץ שירות רקע ואייקונים — כולל למסכי הצוות במטבח ובמחסן.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 53 מודל הנתונים -->
+<section class="slide" data-ch="5" data-t="מודל הנתונים">
+  <div class="head">
+    <span class="eyebrow">‎database · 69 tables</span>
+    <h2>69 טבלאות, לפי תחומים</h2>
+  </div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>תחום</th><th>טבלאות מרכזיות</th><th>כמה</th></tr></thead>
+        <tbody>
+          <tr><td>הזמנות</td><td>הזמנות · שורות הזמנה · בקשות שינוי · יומן תזמון · עבודות הדפסה</td><td class="num">5</td></tr>
+          <tr><td>קטלוג</td><td>מוצרים · וריאציות · קבוצות תוספות · אופציות · פריטי מארז · קטגוריות</td><td class="num">6</td></tr>
+          <tr><td>מנות עסקיות</td><td>מנות · קבוצות תוספות ופריטיהן · קבוצות סלטים וסלטים · אפסייל · תוספות גלובליות · חוסרים · תבניות</td><td class="num">12</td></tr>
+          <tr><td>קייטרינג</td><td>תפריטים · קבוצות · פריטי קבוצה · תוספות</td><td class="num">4</td></tr>
+          <tr><td>ליקוט ואריזה</td><td>מצב ליקוט להזמנה · שורות ליקוט · אזורי אחסון · שיוך מוצרים · עובדים</td><td class="num">5</td></tr>
+          <tr><td>משלוחים</td><td>אזורים · חלונות · חלונות לעיר · תאריכים חסומים · שיוך ערים · בקשות ערים</td><td class="num">6</td></tr>
+          <tr><td>מסלולים</td><td>מסלולים · עצירות · עצירות מיובאות · נהגים · בקשות משיכה · יומן ליונוויל · פרטי חיבור</td><td class="num">7</td></tr>
+          <tr><td>כסף</td><td>קופונים · גיפט קארד · תנועות · עיצובים</td><td class="num">4</td></tr>
+          <tr><td>שיווק</td><td>פופאפים · אירועי פופאפ · היסטוריית הצגה · דיוור · אנשי קשר · משימות · הסרות · אירועי אנליטיקס</td><td class="num">8</td></tr>
+          <tr><td>תוכן</td><td>סקשני דף הבית · ביקורות · ערוצי מכירה · הגדרות החנות</td><td class="num">4</td></tr>
+          <tr><td>משתמשים</td><td>פרופילים · תפקידים · הזמנות אדמין · הרשאות מסך · אבטחה · מועדפים</td><td class="num">6</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">בנוסף: שמונה טיפוסים מוגדרים במסד — סטטוס הזמנה, סטטוס תשלום, אמצעי תשלום, תפקיד, סטטוס ליקוט, מצב פריט בליקוט, מצב חלות וערוץ מכירה. הערכים נאכפים במסד, לא בטקסט חופשי.</p>
+  </div>
+</section>
+
+<!-- 54 פונקציות שרת -->
+<section class="slide" data-ch="5" data-t="28 פונקציות שרת">
+  <div class="head">
+    <span class="eyebrow">‎edge functions</span>
+    <h2>28 פונקציות שרת, לפי תפקיד</h2>
+  </div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card"><span class="tick">תשלומים · 4</span><h3>סליקה ואישור</h3><p>יצירת עסקה מול הסולק, קליטת אישור התשלום, תשלום הפרש לבקשת שינוי, ואישור בצד השרת בלבד.</p></div>
+      <div class="card"><span class="tick">גיפט קארד · 5</span><h3>הנפקה ומימוש</h3><p>יצירה, אישור תשלום, תצוגת מימוש, הנפקה ניהולית וביטול ניהולי.</p></div>
+      <div class="card"><span class="tick">בקשות שינוי · 4</span><h3>מחזור מלא</h3><p>יצירת בקשה, שליחת מייל, אישור או דחייה, ותשלום ההפרש.</p></div>
+      <div class="card"><span class="tick">מיילים · 5</span><h3>יציאה החוצה</h3><p>אישור הזמנה, מייל ללקוח, דיוור, הסרה מרשימת תפוצה ושליחה דרך מתווך הדואר.</p></div>
+      <div class="card"><span class="tick">משלוחים · 4</span><h3>ליונוויל והנהגים</h3><p>יצירת משימת משלוח, הגדרות חיבור, משיכת מסלולים ועמוד המסלול של הנהג.</p></div>
+      <div class="card"><span class="tick">הדפסות · 4</span><h3>קבצים ולינקים</h3><p>נתוני הזמנה להדפסה, לינקי הדפסה חתומים, והפקת PDF בצד השרת.</p></div>
+      <div class="card"><span class="tick">מתוזמנות · 3</span><h3>עובדי רקע</h3><p>שחרור הזמנות עתידיות, מעקב תשלומים וגיפט קארד מתוזמן.</p></div>
+      <div class="card"><span class="tick">שיווק · 1</span><h3>פיד קטלוג</h3><p>פיד מוצרים חי לחנות של מטא.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">לכל פונקציה מוגדר בנפרד אם היא דורשת הזדהות. נקודות שמקבלות קריאה מבחוץ — כמו אישור מהסולק — פתוחות במכוון ומאומתות בתוך הקוד; פעולות ניהוליות כמו הנפקת גיפט קארד או אישור בקשת שינוי דורשות הזדהות.</p>
+  </div>
+</section>
+
+<!-- 55 אוטומציות -->
+<section class="slide" data-ch="5" data-t="אוטומציות מתוזמנות">
+  <div class="head">
+    <span class="eyebrow">‎pg_cron</span>
+    <h2>ארבעה תהליכים שרצים בלי שאף אחד לוחץ</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>תהליך</th><th>תדירות</th><th>מה הוא עושה</th></tr></thead>
+        <tbody>
+          <tr><td>שחרור הזמנות עתידיות</td><td>כל דקה</td><td>מסמן בונים להדפסה כשהגיע מועד ההדפסה, וחושף הזמנות למטבח כשהגיעה שעת ההכנה</td></tr>
+          <tr><td>מעקב תשלומים</td><td>כל כמה דקות</td><td>מבטל הזמנות שעברו את הדדליין, ושולח תזכורות תשלום עד למכסה שנקבעה</td></tr>
+          <tr><td>גיפט קארד מתוזמן</td><td>יומי</td><td>שולח כרטיסי מתנה בתאריך שהרוכש בחר</td></tr>
+          <tr><td>משיכת מסלולים</td><td>לפי בקשה</td><td>טריגר במסד מריץ את המשיכה מחברת המשלוחים בצד השרת, והמסך עוקב אחרי הסטטוס</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="split">
+      <p class="lede">בנוסף רצים טריגרים בתוך המסד עצמו: חישוב שעת הכניסה למטבח ושעת ההדפסה מרגע האספקה, מספור הזמנות לפי ערוץ, חותמות עדכון, ויצירת רשומת ליקוט להזמנה כשהיא נכנסת ללוח.</p>
+      <aside class="aside">
+        <span class="t">הקשחה</span>
+        <p>העובדים המתוזמנים תומכים בסוד קריאה נוסף בכותרת הבקשה — כך שגם מי שמכיר את הכתובת לא יכול להריץ אותם.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 56 אבטחה -->
+<section class="slide" data-ch="5" data-t="אבטחה והרשאות">
+  <div class="head">
+    <span class="eyebrow">‎security</span>
+    <h2>חמש שכבות הרשאה</h2>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="card"><span class="tick">01 · DB</span><h3>הרשאות ברמת השורה</h3><p>כל טבלה מוגנת במדיניות שנשענת על פונקציות ״האם משתמש צוות״ ו״האם מנהל״. אין גישה אנונימית לנתונים תפעוליים.</p></div>
+      <div class="card"><span class="tick">02 · ROLES</span><h3>שישה תפקידים</h3><p>מנהל־על · מנהל · מטבח · שליח · תמיכה · לקוח — בטבלת תפקידים נפרדת, לא בשדה על המשתמש.</p></div>
+      <div class="card"><span class="tick">03 · SCREENS</span><h3>הרשאה לכל מסך</h3><p>לכל עובד רשימת מסכים מותרים. התפריט נבנה ממנה, והמסכים שאינם מותרים פשוט לא קיימים עבורו.</p></div>
+      <div class="card"><span class="tick">04 · MANAGER</span><h3>סיסמת מנהל</h3><p>פעולות רגישות — כמו החזרת הזמנה לסטטוס ״חדש״ — דורשות סיסמה שנבדקת בשרת. הסיסמה עצמה לא נחשפת לעולם.</p></div>
+      <div class="card"><span class="tick">05 · TOKENS</span><h3>אסימונים לקישורים</h3><p>מעקב הזמנה, עמוד הנהג ולינקי הדפסה עובדים עם אסימון אקראי — ולנהג נדרש גם קוד כניסה.</p></div>
+      <div class="card"><span class="tick">SECRETS</span><h3>סודות בצד השרת</h3><p>מפתחות הסליקה, המשלוחים והדואר לא נמצאים בקוד הלקוח. הממשק מציג ״מוגדר״ בלבד.</p></div>
+    </div>
+    <div class="perf"></div>
+    <p class="lede">הזמנת עובד חדש נעשית לפי כתובת מייל: קובעים לו מראש את רשימת המסכים, וברגע שהוא נרשם לאתר — ההרשאות מוצמדות אליו אוטומטית.</p>
+  </div>
+</section>
+
+<!-- 57 הגדרות -->
+<section class="slide" data-ch="5" data-t="מסך ההגדרות">
+  <div class="head">
+    <span class="eyebrow">‎/admin/settings</span>
+    <h2>174 מתגים, בשמונה טאבים</h2>
+    <p class="lede">כמעט כל התנהגות במערכת נשלטת מכאן — בלי לגעת בקוד ובלי לחכות למפתח.</p>
+  </div>
+  <div class="body">
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>טאב</th><th>מה יש בו</th></tr></thead>
+        <tbody>
+          <tr><td>כללי</td><td>פרטי החנות, מינימום הזמנה, איסוף עצמי, רשתות חברתיות, וואטסאפ, מייל התראות</td></tr>
+          <tr><td>עיצוב ומיתוג</td><td>לוגו, באנרים, סליידרים, שכבות כהות, גופנים לכל משקל, גדלי טקסט, תמונות תגיות, עמודות במובייל</td></tr>
+          <tr><td>הזמנות ותשלום</td><td>אמצעי תשלום, תשלומים, חלון זמן לתשלום, תזכורות, ביטול אוטומטי, משלוח חינם, אפסייל, הודעות אישור</td></tr>
+          <tr><td>שעות פעילות</td><td>שעות לכל יום, שעות קבלת הזמנות, הזמנות עתידיות, קיבולת, חלונות סגירה שבועיים ולפי תאריך</td></tr>
+          <tr><td>מטבח והדפסות</td><td>זמן הכנה, מרווח ביטחון, דקות לפני הדפסה, הדפסה אוטומטית, בון כפול, מיון PDF, תמונת תחתית, בדיקת הדפסה</td></tr>
+          <tr><td>שמירת שבת</td><td>חסימה אוטומטית לפי זמני הדלקה והבדלה בעיר שלכם, כולל חגים, מרווח ביטחון ועקיפה ידנית</td></tr>
+          <tr><td>שיווק והתראות</td><td>פיקסלים, קוקיז, מדיניות פרטיות, סרגל רץ, התראת סגירה, מצב עומס, קוד מותאם</td></tr>
+          <tr><td>אבטחה</td><td>סיסמת מנהל, דרישת אימות לפעולות רגישות, חלון זיכרון</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">ולכל ערוץ מכירה יש סט הגדרות מקביל משלו: מינימום, סף משלוח חינם, אפסייל, הודעות, מייל התראות והערת תחתית להדפסה.</p>
+  </div>
+</section>
+
+<!-- 58 שבת -->
+<section class="slide" data-ch="5" data-t="שער השבת">
+  <div class="head">
+    <span class="eyebrow">‎settings · שמירת שבת</span>
+    <h2>המערכת מכירה את לוח השנה</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body split">
+    <div style="display:flex;flex-direction:column;gap:.9em">
+      <p class="lede">שער אוטומטי שסוגר את האתר בשבתות ובחגים — לא לפי שעה קבועה, אלא לפי <strong>זמני הדלקת נרות והבדלה בעיר שלכם</strong>.</p>
+      <dl class="rows">
+        <div class="row"><dt>שני מצבים</dt><dd>לפי זמנים מחושבים, או לפי שעות קבועות שאתם קובעים לשישי ולשבת.</dd></div>
+        <div class="row"><dt>עיר</dt><dd>בחירת עיר שממנה נגזרים הזמנים.</dd></div>
+        <div class="row"><dt>דקות לפני ואחרי</dt><dd>שליטה נפרדת בדקות ההדלקה, בדקות ההבדלה ובמרווח ביטחון נוסף.</dd></div>
+        <div class="row"><dt>חגים</dt><dd>מתג שמכליל גם ימים טובים, לא רק שבתות.</dd></div>
+        <div class="row"><dt>עקיפה</dt><dd>אוטומטי · פתוח בכפייה · סגור בכפייה — לשליטה ידנית כשצריך.</dd></div>
+      </dl>
+    </div>
+    <aside class="aside">
+      <span class="t">למה זה בבקאנד</span>
+      <h3>לא באנר — שער</h3>
+      <p>זו לא הודעה שמוצגת ללקוח, אלא חסימה שנאכפת לפני שהאתר בכלל מציג תפריט. אין מצב שהזמנה נכנסת בטעות בשבת.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 59 סיכום -->
+<section class="slide" data-ch="0" data-t="מה זה נותן לעסק">
+  <div class="head">
+    <span class="eyebrow">שורה תחתונה</span>
+    <h2>מה כל זה נותן ביום־יום</h2>
+  </div>
+  <div class="perf"></div>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card lit"><span class="tick">זמן</span><h3>אין הקלדה כפולה</h3><p>ההזמנה נכנסת פעם אחת ומגיעה לבד למטבח, למחסן, לנהג ולדוח. אף אחד לא מעתיק בין מסכים.</p></div>
+      <div class="card lit"><span class="tick">כסף</span><h3>לא נופל בין הכיסאות</h3><p>הזמנה שלא שולמה מתוזכרת ואז מתבטלת. חוסר במחסן הופך אוטומטית לסכום זיכוי. עגלות נטושות מוצגות עם שווי.</p></div>
+      <div class="card lit"><span class="tick">שליטה</span><h3>רואים בזמן אמת</h3><p>איפה כל הזמנה, מי מלקט אותה, כמה זמן זה לקח, אצל איזה נהג היא, ומתי היא נמסרה.</p></div>
+      <div class="card lit"><span class="tick">גמישות</span><h3>174 מתגים במקום פיתוח</h3><p>שינוי זמני הכנה, פתיחת ערוץ חג, סף משלוח חינם או סגירת האתר — הכל מהדשבורד, מיד.</p></div>
+      <div class="card lit"><span class="tick">בטיחות</span><h3>הרשאה לכל מסך</h3><p>המלקט רואה מסך אחד. הנהג רואה מסלול אחד. המנהל רואה הכל — ואת הפעולות הרגישות שומרת סיסמה.</p></div>
+      <div class="card lit"><span class="tick">קנה מידה</span><h3>ערב חג עובד</h3><p>הדפסה מרוכזת בסדר נסיעה, ליקוט כמותי, קיבולת לחלונות זמן, וניטור חי של מאות משלוחים במקביל.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 60 סיום -->
+<section class="slide cover" data-ch="0" data-t="סיום">
+  <span class="eyebrow">סוף</span>
+  <h1>זה מה שרץ<br>מאחורי התפריט.</h1>
+  <p class="sub">28 מסכי ניהול · 69 טבלאות · 28 פונקציות שרת · 4 אוטומציות · 174 מתגים — מערכת אחת שמריצה מסעדה שלמה.</p>
+  <div class="meta">
+    <span>האתר<b>jewishrestaurant.online</b></span>
+    <span>לוח הבקרה<b>‎/admin</b></span>
+    <span>מסמך<b>ספטמבר 2026</b></span>
+  </div>
+</section>
+
+  </main>
+
+  <div class="foot">
+    <span class="chname" id="chname">פתיחה</span>
+    <span class="spacer"></span>
+    <span class="cnt"><span id="cur">1</span> / <span id="tot">60</span></span>
+  </div>
+</div>
+
+<div class="idx" id="idx" hidden>
+  <button class="btn idx-close" id="idx-close" type="button">סגירה ✕</button>
+  <h2>תוכן העניינים</h2>
+  <div class="idx-grid" id="idx-grid"></div>
+</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage = document.getElementById('stage');
+  var rail = document.getElementById('rail');
+  var curEl = document.getElementById('cur');
+  var totEl = document.getElementById('tot');
+  var chEl = document.getElementById('chname');
+  var idx = document.getElementById('idx');
+  var grid = document.getElementById('idx-grid');
+  var CH = ['פתיחה', 'הזמנות וכסף', 'מטבח ותפעול', 'משלוחים ונהגים', 'קטלוג ותוכן', 'תשתית ואבטחה'];
+  var i = 0;
+
+  totEl.textContent = slides.length;
+
+  function show(n, push) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    slides[i].classList.remove('on');
+    i = n;
+    slides[i].classList.add('on');
+    slides[i].scrollTop = 0;
+    rail.style.width = ((i + 1) / slides.length * 100) + '%';
+    curEl.textContent = i + 1;
+    chEl.textContent = CH[Number(slides[i].dataset.ch || 0)] || '';
+    if (push !== false) history.replaceState(null, '', '#' + (i + 1));
+    Array.prototype.forEach.call(grid.querySelectorAll('.idx-item'), function (b, k) {
+      b.classList.toggle('cur', k === i);
+    });
+  }
+
+  // build the index
+  var byCh = {};
+  slides.forEach(function (s, n) {
+    var c = Number(s.dataset.ch || 0);
+    (byCh[c] = byCh[c] || []).push({ n: n, t: s.dataset.t || ('עמוד ' + (n + 1)) });
+  });
+  Object.keys(byCh).sort(function (a, b) { return a - b; }).forEach(function (c) {
+    var col = document.createElement('div');
+    col.className = 'idx-col';
+    var h = document.createElement('h3');
+    h.textContent = CH[c] || '';
+    h.style.color = ['var(--accent)', 'var(--accent)', 'var(--wine)', 'var(--amber)', 'var(--green)', 'var(--bronze)'][c] || 'var(--accent)';
+    col.appendChild(h);
+    byCh[c].forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'idx-item';
+      b.innerHTML = '<span class="n">' + String(it.n + 1).padStart(2, '0') + '</span><span></span>';
+      b.lastChild.textContent = it.t;
+      b.addEventListener('click', function () { idx.hidden = true; show(it.n); });
+      col.appendChild(b);
+    });
+    grid.appendChild(col);
+  });
+
+  function next() { show(i + 1); }
+  function prev() { show(i - 1); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowLeft' || k === 'PageDown' || k === ' ' || k === 'ArrowDown') { e.preventDefault(); next(); }
+    else if (k === 'ArrowRight' || k === 'PageUp' || k === 'ArrowUp') { e.preventDefault(); prev(); }
+    else if (k === 'Home') { e.preventDefault(); show(0); }
+    else if (k === 'End') { e.preventDefault(); show(slides.length - 1); }
+    else if (k === 'g' || k === 'G' || k === 'ג') { idx.hidden = !idx.hidden; }
+    else if (k === 'p' || k === 'P' || k === 'פ') { e.preventDefault(); window.print(); }
+    else if (k === 'Escape') { idx.hidden = true; }
+  });
+
+  // click zones on the stage edges (RTL: left edge = next)
+  stage.addEventListener('click', function (e) {
+    if (e.target.closest('a,button,input,select,textarea')) return;
+    var r = stage.getBoundingClientRect();
+    var x = e.clientX - r.left;
+    if (x < r.width * 0.18) next();
+    else if (x > r.width * 0.82) prev();
+  });
+
+  // swipe
+  var sx = null;
+  stage.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx;
+    if (Math.abs(dx) > 55) { dx > 0 ? prev() : next(); }
+    sx = null;
+  }, { passive: true });
+
+  document.getElementById('btn-idx').addEventListener('click', function () { idx.hidden = !idx.hidden; });
+  document.getElementById('idx-close').addEventListener('click', function () { idx.hidden = true; });
+  document.getElementById('btn-print').addEventListener('click', function () { window.print(); });
+
+  var root = document.documentElement;
+  document.getElementById('btn-theme').addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches ||
+        !window.matchMedia('(prefers-color-scheme: light)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  show(isNaN(start) ? 0 : start - 1, false);
+})();
+</script>
